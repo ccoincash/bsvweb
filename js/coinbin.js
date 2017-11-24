@@ -746,8 +746,7 @@ $(document).ready(function() {
 		if(host=='bitcoincash_testnet'){
 			listUnspentBchtest(redeem);
 		} else {
-			//listUnspentBchmainnet(redeem);
-			console.log("wrong host: ", host);
+			listUnspentBchmainnet(redeem);
 		}
 
 		if($("#redeemFromStatus").hasClass("hidden")) {
@@ -883,17 +882,17 @@ $(document).ready(function() {
 		});
 	}
 
-	function listUnspentBchtest(redeem) {
+	function listUnspentBch(urlbase, redeem) {
 		$.ajax ({
 			type: "GET",
-			url: "https://tbcc.blockdozer.com/insight-api/addr/"+redeem.addr+"/utxo",
+			url: urlbase+"/insight-api/addr/"+redeem.addr+"/utxo",
 			dataType: "json",
 			error: function(data) {
 				$("#redeemFromStatus").removeClass('hidden').html('<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs!');
 			},
 			success: function(data) {
 				if(data){
-					$("#redeemFromAddress").removeClass('hidden').html('<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="https://tbcc.blockdozer.com/insight/address/'+redeem.addr+'" target="_blank">'+redeem.addr+'</a>');
+					$("#redeemFromAddress").removeClass('hidden').html('<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="'+urlbase+'/insight/address/'+redeem.addr+'" target="_blank">'+redeem.addr+'</a>');
 					console.log('data: ', data)
 					for(var i = 0; i < data.length; ++i){
 						var o = data[i];
@@ -913,6 +912,16 @@ $(document).ready(function() {
 				totalInputAmount();
 			}
 		});
+	}
+
+	function listUnspentBchtest(redeem) {
+		var url = "https://tbcc.blockdozer.com";
+		listUnspentBch(url, redeem);
+	}
+
+	function listUnspentBchmainnet(redeem) {
+		var url = "https://bcc.blockdozer.com";
+		listUnspentBch(url, redeem);
 	}
 
 	/* retrieve unspent data from blockrio for mainnet */
@@ -1123,18 +1132,17 @@ $(document).ready(function() {
 		if(host=='bitcoincash_testnet'){
 			rawSubmitTestnet(this);
 		} else {
-			//TODO:rawSubmitMainnet(this);
-			console.log("wrong host: ", host);
+			rawSubmitMainnet(this);
 		}
 	});
 
 	// broadcast transaction to bitcoin cash testnet
-	function rawSubmitTestnet(btn){
+	function rawSubmitBch(btn, urlbase){
 		var thisbtn = btn;		
 		$(thisbtn).val('Please wait, loading...').attr('disabled',true);
 		$.ajax ({
 			type: "POST",
-			url: "https://tbcc.blockdozer.com/insight-api/tx/send",
+			url: urlbase+"/insight-api/tx/send",
 			data: {'rawtx':$("#rawTransaction").val()},
 			//dataType: "xml",
 			error: function(data) {
@@ -1154,6 +1162,16 @@ $(document).ready(function() {
 				$(thisbtn).val('Submit').attr('disabled',false);				
 			}
 		});
+	}
+
+	function rawSubmitTestnet(btn){
+		var url = "https://tbcc.blockdozer.com";
+		rawSubmitBch(btn, url);
+	}
+
+	function rawSubmitMainnet(btn){
+		var url = "https://bcc.blockdozer.com";
+		rawSubmitBch(btn, url);
 	}
 
 	// broadcast transaction vai coinbin (default)
