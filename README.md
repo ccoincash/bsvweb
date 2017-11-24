@@ -1,13 +1,13 @@
-coinbin
+bchjs
 =======
 
-A Open Source Browser Based Bitcoin Wallet. Version 1.2 beta by OutCast3k
+A Open Source Browser Based Bitcoin Cash Wallet. It forked from https://github.com/OutCast3k/coinbin/.
 
-Live version available at http://coinb.in/ or http://4zpinp6gdkjfplhk.onion
+Live version available at http://www.ccoin.cash/
 
 Github URL: https://github.com/ccoincash/bchjs.git/
 
-Coinb.in supports a number of key features such as: 
+It supports a number of key features such as: 
 
 - Offline Compressed & uncompressed Address creation.
 - Offline Multisignature Address creation.
@@ -22,11 +22,5 @@ Coinb.in supports a number of key features such as:
 - Add custom data to transactions with the use of OP_RETURN.
 - Support current Dark Wallet Stealth Address structure (as of version Alpha 7) for outputs.
 - Brain wallet support.
-- Compatible with bitcoin-qt
-- An offical .onion address for tor users.
 - Offline qrcode creator and scanning tool
 - HD (bip32) support
-- Supports altcoins such as litecoin
-- Replace by fee (RBF) Support
-
-Donate to 1EqTeKgwMFnjUi8tiZnCRGR8C6QvHFZevY to see more development!
