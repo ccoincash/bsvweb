@@ -91,8 +91,8 @@
 						</div>
 
 						<div class="jumbotron">
-							<h1>Bitcoin. It's your money!</h1>
-							<p>Be your own bank, take control of your own money and start using Bitcoin today!</p>
+							<h1>Bitcoin Cash. It's your money!</h1>
+							<p>Be your own bank, take control of your own money and start using Bitcoin Cash today!</p>
 							<p><a class="btn btn-primary btn-lg" href="#about" role="button">Learn more &raquo;</a></p>
 						</div>
 
@@ -106,7 +106,7 @@
 
 							<div class="col-md-4">
 								<h3><span class="glyphicon glyphicon-fullscreen"></span> MultiSig</h3>
-								<p>We offer a fully transparent <a href="#newMultiSig">multisig</a> solution which works seamlessly offline and with other bitcoin clients.</p>
+								<p>We offer a fully transparent <a href="#newMultiSig">multisig</a> solution which works seamlessly offline and with other bitcoin cash clients.</p>
 							</div>
 
 							<div class="col-md-4">
@@ -136,7 +136,7 @@
 					<div class="tab-pane tab-content" id="wallet">
 						<div class="row">
 							<div class="col-md-12">
-								<h2>Open Wallet <small> browser based bitcoin wallet</small></h2>
+								<h2>Open Wallet <small> browser based bitcoin cash wallet</small></h2>
 								<div id="openLogin">
 									<form class="form-signin" role="form" action="javascript:;">
 
@@ -222,7 +222,7 @@
 													</div>
 													<div class="row">
 														<div class="col-xs-6">
-															<label><abbr title="the amount to pay in network miner fees - 0.0004 or more recommended for a faster processing time">Transaction Fee</abbr>&nbsp;&nbsp;<a href="https://bitcoinfees.21.co/" target="_blank"><span class="glyphicon glyphicon-question-sign"></span></a></label>
+															<label><abbr title="the amount to pay in network miner fees">Transaction Fee</abbr>&nbsp;&nbsp;<a href="https://bitinfocharts.com/comparison/transactionfees-bch.html" target="_blank"><span class="glyphicon glyphicon-question-sign"></span></a></label>
 															<input type="text" class="form-control" value="0.0004" id="txFee">
 														</div>
 														<div class="col-xs-5">
@@ -599,7 +599,7 @@
 							<div class="tab-pane fade" id="txinputs">
 								<p>Enter the details of inputs you wish to spend.</p>
 								<div class="row">
-									<div class="col-xs-5">
+									<div class="col-xs-3">
 										<label><abbr title="Transaction ID">Transaction ID:</abbr></label>
 									</div>
 									<div class="col-xs-1">
@@ -611,13 +611,16 @@
 									<div class="col-xs-2">
 										<label><abbr title="This field is for accounting purposes only - the entire input will be spent!">Amount</abbr></label>
 									</div>
+									<div class="col-xs-2">
+										<label>Satoshi</label>
+									</div>
 									<div class="col-xs-1">
 									</div>
 								</div>
 
 								<div id="inputs">
 									<div class="row inputs">
-										<div class="col-xs-5">
+										<div class="col-xs-3">
 											<input type="text" class="form-control txId" placeholder="">
 										</div>
 										<div class="col-xs-1">
@@ -628,6 +631,9 @@
 										</div>
 										<div class="col-xs-2">
 											<input type="text" class="form-control txIdAmount" placeholder="0.00">
+										</div>
+										<div class="col-xs-2">
+											<input type="text" class="form-control txIdSatoshis" placeholder="0.00">
 										</div>
 										<div class="col-xs-1">
 											<a href="javascript:;" class="txidAdd"><span class="glyphicon glyphicon-plus"></span></a>
@@ -643,7 +649,7 @@
 
 						<div class="row">
 							<div class="col-xs-3">
-								<label><abbr title="What is not spent will be used as a transaction fee">Transaction Fee</abbr>&nbsp;&nbsp;<a href="https://bitcoinfees.21.co/" target="_blank"><span class="glyphicon glyphicon-question-sign"></span></a></label>
+								<label><abbr title="What is not spent will be used as a transaction fee">Transaction Fee</abbr>&nbsp;&nbsp;<a href="https://bitinfocharts.com/comparison/transactionfees-bch.html" target="_blank"><span class="glyphicon glyphicon-question-sign"></span></a></label>
 								<input type="text" id="transactionFee" class="form-control" value="0.0000" readonly>
 							</div>
 						</div>
@@ -659,6 +665,17 @@
 							<p>The transaction below has been generated and encoded. It can be broadcasted once it has been signed.</p>
 							<br>
 			                                <textarea class="form-control" style="height:150px" readonly></textarea>
+
+							<p class="text-muted">Size: <span class="txSize">0</span> <i>bytes</i></p>
+						</div>
+
+						<div id="TransactionOut" class="alert alert-success hidden">
+							<label>Previous Transactions Out</label>
+							<button class="qrcodeBtn btn btn-default" type="button" data-toggle="modal" data-target="#modalQrcode" style="float:right;"><span class="glyphicon glyphicon-qrcode"></span></button>
+
+							<p>The previous transaction out including script code and amount has been generated and encoded. It is needed for signing bitcoin cash transaction.</p>
+							<br>
+											<textarea class="form-control" style="height:150px" readonly></textarea>
 
 							<p class="text-muted">Size: <span class="txSize">0</span> <i>bytes</i></p>
 						</div>
@@ -905,7 +922,16 @@
 
 						<div class="row">
 							<div class="col-md-12">
+								<label for="signTransaction">Raw Transaction</label>
 								<textarea type="text" id="signTransaction" class="form-control" style="height:125px"></textarea>
+							</div>
+						</div>
+						<br>
+
+						<div class="row">
+							<div class="col-md-12">
+								<label for="signPrevTxouts">Previous Transactions Out</label>
+								<textarea type="text" id="signPrevTxouts" class="form-control" style="height:125px"></textarea>
 							</div>
 						</div>
 						<br>
@@ -956,9 +982,9 @@
 					</div>
 
 					<div class="tab-pane tab-content" id="broadcast">
-						<h2>Broadcast Transaction <small>into the bitcoin network</small></h2>
+						<h2>Broadcast Transaction <small>into the bitcoin cash network</small></h2>
 						<a href="#settings" style="float:right;"><span class="glyphicon glyphicon-cog"></span></a>
-						<p>Enter your hex encoded bitcoin transaction</p>
+						<p>Enter your hex encoded bitcoin cash transaction</p>
 						<textarea class="form-control" style="height:125px" id="rawTransaction"></textarea>
 						<br>
 						<div id="rawTransactionStatus" class="alert hidden">
@@ -974,14 +1000,13 @@
 					</div>
 
 					<div class="tab-pane tab-content" id="about">
-						<h2>About <small>open source bitcoin wallet</small></h2>
+						<h2>About <small>open source bitcoin cash wallet</small></h2>
 						<p>Version 1.2</p>
-						<p>Compatible with bitcoin-qt</p>
+						<p>Compatible with bitcoinabc</p>
 						<p>Github <a href="https://github.com/OutCast3k/coinbin/">https://github.com/OutCast3k/coinbin/</a></p>
-						<p>TOR <a href="http://4zpinp6gdkjfplhk.onion">4zpinp6gdkjfplhk.onion</a></p>
-						<h3>What is Bitcoin?</h3>
-						<p>Bitcoin is a type of digital currency in which encryption techniques are used to regulate the generation of units of currency and verify the transfer of funds, operating independently of a central bank. See <a href="http://www.weusecoins.com/" target="_blank">weusecoins.com</a> for more information.</p>
-						<p>If you are looking to buy some Bitcoin try <a href="https://localbitcoins.com/?ch=173j" target="_blank">LocalBitcoins.com</a>.</p>
+						<!--<p>TOR <a href="http://4zpinp6gdkjfplhk.onion">4zpinp6gdkjfplhk.onion</a></p>-->
+						<h3>What is Bitcoin Cash?</h3>
+						<p>Bitcoin Cash is a type of digital currency in which encryption techniques are used to regulate the generation of units of currency and verify the transfer of funds, operating independently of a central bank. See <a href="https://www.bitcoincash.org/" target="_blank">bitcoincash.org</a> for more information.</p>
 						<h3>Information</h3>
 						<p>Coinb.in is a free and open source project released under the MIT license, originally by <a href="https://bitcointalk.org/index.php?action=profile;u=34834" target="_blank">OutCast3k</a> in 2013. Discussion of the project can be found at <a href="https://bitcointalk.org/index.php?topic=390046" target="_blank">bitcointalk.org</a> during its early testing stages when its primary focus was to develop a proof of concept multisig solution in javascript.</p>
 						<p>Coinb.in is run and funded by the generosity of others in terms of <a href="https://github.com/OutCast3k/coinbin/graphs/contributors" target="_blank">development</a> and hosting.</p>
@@ -998,16 +1023,15 @@
 						<div class="row">
 							<div class="col-md-12">
 								<b>Network</b>: <br>
-								<p class="text-muted">Select which network you'd like to use for key pair generation.</p>
+								<p class="text-muted">Select which network you'd like to use for.</p>
 								<select class="form-control" id="coinjs_coin">
-									<option value="bitcoin_mainnet" rel="0x00;0x80;0x05;0x488b21e;0x488ade4;coinb.in;coinb.in">Bitcoin (mainnet)</option>
-									<option value="litecoin_mainnet" rel="0x30;0xb0;0x05;0x019da462;0x019d9cfe;blockr.io_litecoin;chain.so_litecoin">Litecoin (mainnet)</option>
+									<option value="bitcoincash_mainnet" rel="0x00;0x80;0x05;0x488b21e;0x488ade4;coinb.in;coinb.in">Bitcoin Cash (mainnet)</option>
+									<option value="bitcoincash_testnet" rel="0x00;0x80;0x05;0x488b21e;0x488ade4;coinb.in;coinb.in">Bitcoin Cash (testnet)</option>
+									<!--option value="litecoin_mainnet" rel="0x30;0xb0;0x05;0x019da462;0x019d9cfe;blockr.io_litecoin;chain.so_litecoin">Litecoin (mainnet)</option>
 									<option value="dogecoin_mainnet" rel="0x1e;0x9e;0x16;0x0827421e;0x089944e4;chain.so_dogecoin;chain.so_dogecoin">Dogecoin (mainnet)</option>
 									<option value="carboncoin_mainnet" rel="0x2f;0xaf;0x05;0x488b21e;0x488ade4;cryptoid.info_carboncoin;cryptoid.info_carboncoin">Carboncoin (mainnet)</option>
 									<option value="shadowcash_mainnet" rel="0x3f;0xbf;0x7d;0xee80286a;0xee8031e8;false;false">ShadowCash (mainnet)</option>
-									<option value="bitcoin_testnet" rel="0x6f;0xef;0xc4;0x043587cf;0x04358394;false;false">Bitcoin (testnet)</option>
-
-									<option value="custom" rel="0x00;0x80;0x05;0x488b21e;0x488ade4;false;false">Custom</option>
+									<option value="custom" rel="0x00;0x80;0x05;0x488b21e;0x488ade4;false;false">Custom</option>-->
 								</select>
 							</div>
 						</div>
@@ -1053,7 +1077,7 @@
 
 						<hr>
 
-						<div class="row">
+						<!--div class="row">
 							<div class="col-md-12">
 								<b>Broadcast</b>: <br>
 								<p class="text-muted">Select the network you wish to broadcast the transaction via</p>
@@ -1065,7 +1089,6 @@
 									<option value="blockr.io_litecoin"> Blockr.io (Litecoin)</option>
 									<option value="chain.so_dogecoin"> Chain.so (Dogecoin)</option>
 									<option value="cryptoid.info_carboncoin"> Cryptoid.info (Carboncoin)</option>
-								<!--	<option value="blockr.io_bitcointestnet"> Blockr.io (Bitcoin testnet)</option> -->
 								</select>
 							</div>
 						</div>
@@ -1084,7 +1107,7 @@
 									<option value="cryptoid.info_carboncoin"> Cryptoid.info (Carboncoin)</option>
 								</select>
 							</div>
-						</div>
+						</div>-->
 
 						<br>
 
@@ -1263,6 +1286,27 @@
 		</div>
 	</div>
 	<!-- warning (fee) modal -->
+
+	<!-- warning template -->
+	<div class="modal fade" id="warningTemplate" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					<h4 class="modal-title"><b>Warning <span id="modalWarningTitle"></span>!</b></h4>
+				</div>
+
+				<div class="modal-body">
+					<span id="modalWarningBody"></span>
+				</div>
+
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary" data-dismiss="modal" id="warningClose">OK, I've got it!</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- warning template -->
 
 	<div class="hidden" id="entropybucket"></div>
 	</body>

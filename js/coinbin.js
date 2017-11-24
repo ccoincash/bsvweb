@@ -495,6 +495,7 @@ $(document).ready(function() {
 
 	$("#transactionBtn").click(function(){
 		var tx = coinjs.transaction();
+		var txouts = coinjs.Txouts();
 		var estimatedTxSize = 10; // <4:version><1:txInCount><1:txOutCount><4:nLockTime>
 
 		$("#transactionCreate, #transactionCreateStatus").addClass("hidden");
@@ -507,6 +508,8 @@ $(document).ready(function() {
 
 		$('#putTabs a[href="#txinputs"], #putTabs a[href="#txoutputs"]').attr('style','');
 
+		var allInSatoshi = 0;
+		var allOutSatoshi = 0;
 		$.each($("#inputs .row"), function(i,o){
 			if(!($(".txId",o).val()).match(/^[a-f0-9]+$/i)){
 				$(o).addClass("has-error");
@@ -536,6 +539,8 @@ $(document).ready(function() {
 				}
 
 				tx.addinput($(".txId",o).val(), $(".txIdN",o).val(), $(".txIdScript",o).val(), seq);
+				txouts.addtxout($(".txIdScript",o).val(), $(".txIdSatoshis",o).val());
+				allInSatoshi += parseInt($(".txIdSatoshis",o).val());
 			} else {
 				$('#putTabs a[href="#txinputs"]').attr('style','color:#a94442;');
 			}
@@ -546,10 +551,18 @@ $(document).ready(function() {
 		$.each($("#recipients .row"), function(i,o){
 			var a = ($(".address",o).val());
 			var ad = coinjs.addressDecode(a);
-			if(((a!="") && (ad.version == coinjs.pub || ad.version == coinjs.multisig)) && $(".amount",o).val()!=""){ // address
+			var satoshi = coinjs.amountStr2satoshi($(".amount",o).val());
+			if (!satoshi) {
+				$("#modalWarningTitle").html("Wrong Amount Format");
+				$("#modalWarningBody").html("The output amount has wrong format!");
+				$("#warningTemplate").modal("show");
+				return;
+			}
+			allOutSatoshi += satoshi;
+			if(((a!="") && (ad.version == coinjs.pub || ad.version == coinjs.multisig || ad.version == coinjs.testnetPub)) && $(".amount",o).val()!=""){ // address
 				// P2SH output is 32, P2PKH is 34
-				estimatedTxSize += (ad.version == coinjs.pub ? 34 : 32)
-				tx.addoutput(a, $(".amount",o).val());
+				estimatedTxSize += ((ad.version == coinjs.pub || ad.version == coinjs.testnetPub) ? 34 : 32)
+				tx.addoutput2(a, satoshi);
 			} else if (((a!="") && ad.version === 42) && $(".amount",o).val()!=""){ // stealth address
 				// 1 P2PKH and 1 OP_RETURN with 36 bytes, OP byte, and 8 byte value
 				estimatedTxSize += 78
@@ -563,12 +576,25 @@ $(document).ready(function() {
 			}
 		});
 
+		if (allInSatoshi < allOutSatoshi) {
+			$("#modalWarningTitle").html("Low Fee");
+			$("#modalWarningBody").html("Please be aware that you have created a transaction with that the input amount is less than output amount!");
+			$("#warningTemplate").modal("show");
+			return;
+		}
+
 
 		if(!$("#recipients .row, #inputs .row").hasClass('has-error')){
 			$("#transactionCreate textarea").val(tx.serialize());
 			$("#transactionCreate .txSize").html(tx.size());
 
 			$("#transactionCreate").removeClass("hidden");
+
+			var txoutsHex = txouts.serialize()
+			$("#TransactionOut textarea").val(txoutsHex);
+			$("#TransactionOut .txSize").html(txoutsHex.length / 2);
+
+			$("#TransactionOut").removeClass("hidden");
 
 			// Check fee against hard 0.01 as well as fluid 200 satoshis per byte calculation.
 			if($("#transactionFee").val()>=0.01 || $("#transactionFee").val()>= estimatedTxSize * 200 * 1e-8){
@@ -706,7 +732,7 @@ $(document).ready(function() {
 		var host = $(this).attr('rel');
 
 
-		if(host=='blockr.io_bitcoinmainnet'){
+		/*if(host=='blockr.io_bitcoinmainnet'){
 			listUnspentBlockrio_BitcoinMainnet(redeem);
 		} else if(host=='chain.so_litecoin'){
 			listUnspentChainso_Litecoin(redeem);
@@ -716,6 +742,12 @@ $(document).ready(function() {
 			listUnspentCryptoidinfo_Carboncoin(redeem);
 		} else {
 			listUnspentDefault(redeem);
+		}*/
+		if(host=='bitcoincash_testnet'){
+			listUnspentBchtest(redeem);
+		} else {
+			//listUnspentBchmainnet(redeem);
+			console.log("wrong host: ", host);
 		}
 
 		if($("#redeemFromStatus").hasClass("hidden")) {
@@ -732,7 +764,7 @@ $(document).ready(function() {
 	function redeemingFrom(string){
 		var r = {};
 		var decode = coinjs.addressDecode(string);
-		if(decode.version == coinjs.pub){ // regular address
+		if(decode.version == coinjs.pub || decode.version == coinjs.testnetPub){ // regular address
 			r.addr = string;
 			r.from = 'address';
 			r.isMultisig = false;
@@ -802,16 +834,29 @@ $(document).ready(function() {
 			if($("#inputs .txId:last").val()!=""){
 				$("#inputs .txidAdd").click();
 			}
-
+	
 			$("#inputs .row:last input").attr('disabled',true);
 
 			var txid = ((tx).match(/.{1,2}/g).reverse()).join("")+'';
-
+			
 			$("#inputs .txId:last").val(txid);
 			$("#inputs .txIdN:last").val(n);
 			$("#inputs .txIdAmount:last").val(amount);
 			$("#inputs .txIdScript:last").val(script);
 		}
+	}
+
+	function addOutput2(txid, n, script, satoshis) {
+		if($("#inputs .txId:last").val()!=""){
+			$("#inputs .txidAdd").click();
+		}
+
+		$("#inputs .row:last input").attr('disabled',true);
+		$("#inputs .txId:last").val(txid);
+		$("#inputs .txIdN:last").val(n);
+		$("#inputs .txIdAmount:last").val((satoshis / 100000000).toFixed(8));
+		$("#inputs .txIdSatoshis:last").val(satoshis);
+		$("#inputs .txIdScript:last").val(script);
 	}
 
 	/* default function to retreive unspent outputs*/	
@@ -835,6 +880,38 @@ $(document).ready(function() {
 			totalInputAmount();
 
 			mediatorPayment(redeem);
+		});
+	}
+
+	function listUnspentBchtest(redeem) {
+		$.ajax ({
+			type: "GET",
+			url: "https://tbcc.blockdozer.com/insight-api/addr/"+redeem.addr+"/utxo",
+			dataType: "json",
+			error: function(data) {
+				$("#redeemFromStatus").removeClass('hidden').html('<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs!');
+			},
+			success: function(data) {
+				if(data){
+					$("#redeemFromAddress").removeClass('hidden').html('<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="https://tbcc.blockdozer.com/insight/address/'+redeem.addr+'" target="_blank">'+redeem.addr+'</a>');
+					console.log('data: ', data)
+					for(var i = 0; i < data.length; ++i){
+						var o = data[i];
+						var tx = o.txid;
+						var n = o.vout;
+						var script = (redeem.isMultisig==true) ? $("#redeemFrom").val() : o.scriptPubKey;
+						var amount = o.amount;
+						var satoshis = o.satoshis
+						addOutput2(tx, n, script, satoshis);
+					}
+				} else {
+					$("#redeemFromStatus").removeClass('hidden').html('<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs.');
+				}
+			},
+			complete: function(data, status) {
+				$("#redeemFromBtn").html("Load").attr('disabled',false);
+				totalInputAmount();
+			}
 		});
 	}
 
@@ -1042,8 +1119,42 @@ $(document).ready(function() {
 	/* broadcast a transaction */
 
 	$("#rawSubmitBtn").click(function(){
-		rawSubmitDefault(this);
+		var host = $(this).attr('rel');
+		if(host=='bitcoincash_testnet'){
+			rawSubmitTestnet(this);
+		} else {
+			//TODO:rawSubmitMainnet(this);
+			console.log("wrong host: ", host);
+		}
 	});
+
+	// broadcast transaction to bitcoin cash testnet
+	function rawSubmitTestnet(btn){
+		var thisbtn = btn;		
+		$(thisbtn).val('Please wait, loading...').attr('disabled',true);
+		$.ajax ({
+			type: "POST",
+			url: "https://tbcc.blockdozer.com/insight-api/tx/send",
+			data: {'rawtx':$("#rawTransaction").val()},
+			//dataType: "xml",
+			error: function(data) {
+				$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html(" There was an error submitting your request, please try again").prepend('<span class="glyphicon glyphicon-exclamation-sign"></span>');
+			},
+            success: function(data) {
+				$("#rawTransactionStatus").html(unescape($(data).find("response").text()).replace(/\+/g,' ')).removeClass('hidden');
+				if(data.txid){
+					$("#rawTransactionStatus").addClass('alert-success').removeClass('alert-danger');
+					$("#rawTransactionStatus").html('txid: '+data.txid);
+				} else {
+					$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').prepend('<span class="glyphicon glyphicon-exclamation-sign"></span> ');
+				}
+			},
+			complete: function(data, status) {
+				$("#rawTransactionStatus").fadeOut().fadeIn();
+				$(thisbtn).val('Submit').attr('disabled',false);				
+			}
+		});
+	}
 
 	// broadcast transaction vai coinbin (default)
 	function rawSubmitDefault(btn){ 
@@ -1492,6 +1603,7 @@ $(document).ready(function() {
 	$("#signBtn").click(function(){
 		var wifkey = $("#signPrivateKey");
 		var script = $("#signTransaction");
+		var prevTxouts = $("#signPrevTxouts")
 
 		if(coinjs.addressDecode(wifkey.val())){
 			$(wifkey).parent().removeClass('has-error');
@@ -1511,12 +1623,22 @@ $(document).ready(function() {
 				var tx = coinjs.transaction();
 				var t = tx.deserialize(script.val());
 
-				var signed = t.sign(wifkey.val(), $("#sighashType option:selected").val());
+				var txouts = coinjs.Txouts();
+				txouts.deserialize(prevTxouts.val())
+				// check if the txouts.length == tx.txins.length
+				if (txouts.data.length != t.ins.length) {
+					$("#modalWarningTitle").html("previous transaction out error");
+					$("#modalWarningBody").html("The previous transaction out is not match with the transaction input");
+					$("#warningTemplate").modal("show");
+					return;
+				}
+				var signed = t.sign(wifkey.val(), $("#sighashType option:selected").val(), txouts.data);
+				
 				$("#signedData textarea").val(signed);
 				$("#signedData .txSize").html(t.size());
 				$("#signedData").removeClass('hidden').fadeIn();
 			} catch(e) {
-				// console.log(e);
+				console.log(e);
 			}
 		} else {
 			$("#signedDataError").removeClass('hidden');
@@ -1663,8 +1785,10 @@ $(document).ready(function() {
 			coinjs.hdkey.pub =  $("#coinjs_hdpub").val()*1;
 			coinjs.hdkey.prv =  $("#coinjs_hdprv").val()*1;
 
-			configureBroadcast();
-			configureGetUnspentTx();
+			//configureBroadcast();
+			//configureGetUnspentTx();
+			$("#redeemFromBtn").attr('rel',$("#coinjs_coin option:selected").val());
+			$("#rawSubmitBtn").attr('rel',$("#coinjs_coin option:selected").val());
 
 			$("#statusSettings").addClass("alert-success").removeClass("hidden").html("<span class=\"glyphicon glyphicon-ok\"></span> Settings updates successfully").fadeOut().fadeIn();	
 		} else {
