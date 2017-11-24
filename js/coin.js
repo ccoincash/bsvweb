@@ -22,7 +22,7 @@
 	coinjs.COIN = 100000000;
 
 	/* other vars */
-	coinjs.developer = '1CWHWkTWaq1K5hevimJia3cyinQsrgXUvg'; // bitcoin
+	coinjs.developer = '1EqTeKgwMFnjUi8tiZnCRGR8C6QvHFZevY'; // bitcoin
 
 	/* bit(coinb.in) api vars */
 	coinjs.host = ('https:'==document.location.protocol?'https://':'http://')+'coinb.in/api/';

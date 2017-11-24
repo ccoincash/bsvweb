@@ -29,4 +29,4 @@ Coinb.in supports a number of key features such as:
 - Supports altcoins such as litecoin
 - Replace by fee (RBF) Support
 
-Donate to 1CWHWkTWaq1K5hevimJia3cyinQsrgXUvg to see more development!
+Donate to 1EqTeKgwMFnjUi8tiZnCRGR8C6QvHFZevY to see more development!
