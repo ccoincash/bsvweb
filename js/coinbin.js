@@ -26,11 +26,12 @@ $(document).ready(function() {
 					var keys = coinjs.newKeys(s);
 
 					$("#walletAddress").html(keys.address);
-					$("#walletHistory").attr('href','https://btc.blockr.io/address/info/'+keys.address);
+					$("#walletHistory").attr('href',coinjs.currenturl+'/insight/address/'+keys.address);
 
 					$("#walletQrCode").html("");
 					var qrcode = new QRCode("walletQrCode");
-					qrcode.makeCode("bitcoin:"+keys.address);
+					//TODO: bitcoincash:address?
+					qrcode.makeCode(keys.address);
 
 					$("#walletKeys .privkey").val(keys.wif);
 					$("#walletKeys .pubkey").val(keys.pubkey);
@@ -87,50 +88,54 @@ $(document).ready(function() {
 		var thisbtn = $(this);
 		var tx = coinjs.transaction();
 		var txfee = $("#txFee");
-		var devaddr = coinjs.developer;
-		var devamount = $("#developerDonation");
+		//var devaddr = coinjs.developer;
+		//var devamount = $("#developerDonation");
 
-		if((devamount.val()*1)>0){
-			tx.addoutput(devaddr, devamount.val()*1);
-		}
+		//if((devamount.val()*1)>0){
+		//	tx.addoutput(devaddr, devamount.val()*1);
+		//}
 
-		var total = (devamount.val()*1) + (txfee.val()*1);
+		var total = coinjs.amountStr2satoshi(txfee.val());
 
 		$.each($("#walletSpendTo .output"), function(i,o){
 			var addr = $('.addressTo',o);
 			var amount = $('.amount',o);
+			var satoshi = coinjs.amountStr2satoshi(amount.val());
 			if(amount.val()*1>0){
-				total += amount.val()*1;
-				tx.addoutput(addr.val(), amount.val()*1);
+				total += satoshi;
+				tx.addoutput2(addr.val(), satoshi);
 			}
 		});
 
 		thisbtn.attr('disabled',true);
 
-		tx.addUnspent($("#walletAddress").html(), function(data){
+		//utxo use strategy: sort by increasing value
+		tx.addUnspent2($("#walletAddress").html(), total, function(data){
 
 			var dvalue = (data.value/100000000).toFixed(8) * 1;
-			total = (total*1).toFixed(8) * 1;
+			var inputSatoshi = data.value;
 
-			if(dvalue>=total){
-				var change = dvalue-total;
-				if((change*1)>0){
-					tx.addoutput($("#walletAddress").html(), change);
+			if (!inputSatoshi) {
+				$("#walletSendConfirmStatus").removeClass("hidden").addClass('alert-danger').html("You have a confirmed balance of "+dvalue+" BTC unable to send "+total+" BTC").fadeOut().fadeIn();
+				thisbtn.attr('disabled',false);
+				return;
+			}
+			else {
+
+				if (inputSatoshi > total) {
+					tx.addoutput2($("#walletAddress").html(), inputSatoshi - total)
 				}
 
-				// clone the transaction with out using coinjs.clone() function as it gives us trouble
-				var tx2 = coinjs.transaction(); 
-				var txunspent = tx2.deserialize(tx.serialize()); 
+				var tx2 = coinjs.transaction();
+				var txunspent = tx2.deserialize(tx.serialize());
+				var signed = txunspent.sign($("#walletKeys .privkey").val(), coinjs.pub, data.prevtxouts.data);
 
-				// then sign
-				var signed = txunspent.sign($("#walletKeys .privkey").val());
-
-				// and finally broadcast!
-				tx2.broadcast(function(data){
-					if($(data).find("result").text()=="1"){
-						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-success').html("txid: "+$(data).find("txid").text());
+				tx2.broadcast2(function(data){
+					if(data){
+						data = JSON.parse(data);
+						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-success').html("txid: "+data.txid);
 					} else {
-						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-danger').html(unescape($(data).find("response").text()).replace(/\+/g,' '));
+						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-danger').html('error: ' + unescape(data).replace(/\+/g,' '));
 						$("#walletSendFailTransaction").removeClass('hidden');
 						$("#walletSendFailTransaction textarea").val(signed);
 						thisbtn.attr('disabled',false);
@@ -140,9 +145,6 @@ $(document).ready(function() {
 					walletBalance();
 
 				}, signed);
-			} else {
-				$("#walletSendConfirmStatus").removeClass("hidden").addClass('alert-danger').html("You have a confirmed balance of "+dvalue+" BTC unable to send "+total+" BTC").fadeOut().fadeIn();
-				thisbtn.attr('disabled',false);
 			}
 
 			$("#walletLoader").addClass("hidden");
@@ -156,13 +158,13 @@ $(document).ready(function() {
 
 		var thisbtn = $(this);
 		var txfee = $("#txFee");
-		var devamount = $("#developerDonation");
+		//var devamount = $("#developerDonation");
 
-		if((!isNaN(devamount.val())) && devamount.val()>=0){
+		/*if((!isNaN(devamount.val())) && devamount.val()>=0){
 			$(devamount).parent().removeClass('has-error');
 		} else {
 			$(devamount).parent().addClass('has-error')
-		}
+		}*/
 
 		if((!isNaN(txfee.val())) && txfee.val()>=0){
 			$(txfee).parent().removeClass('has-error');
@@ -170,13 +172,13 @@ $(document).ready(function() {
 			$(txfee).parent().addClass('has-error');
 		}
 
-		var total = (devamount.val()*1) + (txfee.val()*1);
+		var total = coinjs.amountStr2satoshi(txfee.val());
 
 		$.each($("#walletSpendTo .output"), function(i,o){
 			var amount = $('.amount',o);
 			var address = $('.addressTo',o);
 
-			total += amount.val()*1;
+			total += coinjs.amountStr2satoshi(amount.val());
 
 			if((!isNaN($(amount).val())) && $(amount).val()>0){
 				$(amount).parent().removeClass('has-error');
@@ -191,17 +193,18 @@ $(document).ready(function() {
 			}
 		});
 
-		total = total.toFixed(8);
+		totalAmount = (total / coinjs.COIN).toFixed(8);
 
 		if($("#walletSpend .has-error").length==0){
-			var balance = ($("#walletBalance").html()).replace(/[^0-9\.]+/g,'')*1;
-			if(total<=balance){
+			var balanceStr = ($("#walletBalance").html()).replace(/[^0-9\.]+/g,'');
+			var balanceSatoshi = coinjs.amountStr2satoshi(balanceStr);
+			if(total<=balanceSatoshi){
 				$("#walletSendConfirmStatus").addClass("hidden").removeClass('alert-success').removeClass('alert-danger').html("");
-				$("#spendAmount").html(total);
+				$("#spendAmount").html(totalAmount);
 				$("#modalWalletConfirm").modal("show");
 				$("#walletConfirmSend").attr('disabled',false);
 			} else {
-				$("#walletSendStatus").removeClass("hidden").html("You are trying to spend "+total+' but have a balance of '+balance);
+				$("#walletSendStatus").removeClass("hidden").html("You are trying to spend "+totalAmount+' but have a balance of '+balanceStr);
 			}
 		} else {
 			$("#walletSpend .has-error").fadeOut().fadeIn();
@@ -229,8 +232,8 @@ $(document).ready(function() {
 		var tx = coinjs.transaction();
 		$("#walletLoader").removeClass("hidden");
 		coinjs.addressBalance($("#walletAddress").html(),function(data){
-			if($(data).find("result").text()==1){
-				var v = $(data).find("balance").text()/100000000;
+			if(data){
+				var v = data/100000000;
 				$("#walletBalance").html(v+" BTC").attr('rel',v).fadeOut().fadeIn();
 			} else {
 				$("#walletBalance").html("0.00 BTC").attr('rel',v).fadeOut().fadeIn();
@@ -729,9 +732,6 @@ $(document).ready(function() {
 
 		$("#redeemFromBtn").html("Please wait, loading...").attr('disabled',true);
 
-		var host = $(this).attr('rel');
-
-
 		/*if(host=='blockr.io_bitcoinmainnet'){
 			listUnspentBlockrio_BitcoinMainnet(redeem);
 		} else if(host=='chain.so_litecoin'){
@@ -743,11 +743,8 @@ $(document).ready(function() {
 		} else {
 			listUnspentDefault(redeem);
 		}*/
-		if(host=='bitcoincash_testnet'){
-			listUnspentBchtest(redeem);
-		} else {
-			listUnspentBchmainnet(redeem);
-		}
+
+		listUnspentBch(coinjs.currenturl, redeem);
 
 		if($("#redeemFromStatus").hasClass("hidden")) {
 			// An ethical dilemma: Should we automatically set nLockTime?
@@ -912,16 +909,6 @@ $(document).ready(function() {
 				totalInputAmount();
 			}
 		});
-	}
-
-	function listUnspentBchtest(redeem) {
-		var url = "https://tbcc.blockdozer.com";
-		listUnspentBch(url, redeem);
-	}
-
-	function listUnspentBchmainnet(redeem) {
-		var url = "https://bcc.blockdozer.com";
-		listUnspentBch(url, redeem);
 	}
 
 	/* retrieve unspent data from blockrio for mainnet */
@@ -1128,12 +1115,7 @@ $(document).ready(function() {
 	/* broadcast a transaction */
 
 	$("#rawSubmitBtn").click(function(){
-		var host = $(this).attr('rel');
-		if(host=='bitcoincash_testnet'){
-			rawSubmitTestnet(this);
-		} else {
-			rawSubmitMainnet(this);
-		}
+		rawSubmitBch(this, coinjs.currenturl);
 	});
 
 	// broadcast transaction to bitcoin cash testnet
@@ -1162,16 +1144,6 @@ $(document).ready(function() {
 				$(thisbtn).val('Submit').attr('disabled',false);				
 			}
 		});
-	}
-
-	function rawSubmitTestnet(btn){
-		var url = "https://tbcc.blockdozer.com";
-		rawSubmitBch(btn, url);
-	}
-
-	function rawSubmitMainnet(btn){
-		var url = "https://bcc.blockdozer.com";
-		rawSubmitBch(btn, url);
 	}
 
 	// broadcast transaction vai coinbin (default)
@@ -1805,8 +1777,11 @@ $(document).ready(function() {
 
 			//configureBroadcast();
 			//configureGetUnspentTx();
-			$("#redeemFromBtn").attr('rel',$("#coinjs_coin option:selected").val());
-			$("#rawSubmitBtn").attr('rel',$("#coinjs_coin option:selected").val());
+			coinjs.network = $("#coinjs_coin option:selected").val();
+			if (coinjs.network == coinjs.BCH_TESTNET)
+				coinjs.currenturl = coinjs.TESTNET_URL;
+			else
+				coinjs.currenturl = coinjs.MAINNET_URL;
 
 			$("#statusSettings").addClass("alert-success").removeClass("hidden").html("<span class=\"glyphicon glyphicon-ok\"></span> Settings updates successfully").fadeOut().fadeIn();	
 		} else {

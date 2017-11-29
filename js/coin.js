@@ -29,6 +29,14 @@
 	coinjs.uid = '1';
 	coinjs.key = '12345678901234567890123456789012';
 
+	coinjs.BCH_TESTNET = 'bitcoincash_testnet';
+	coinjs.BCH_MAINNET = 'bitcoincash_mainnet'
+	coinjs.network = coinjs.BCH_MAINNET;
+
+	coinjs.TESTNET_URL = 'https://tbcc.blockdozer.com';
+	coinjs.MAINNET_URL = 'https://bcc.blockdozer.com';
+	coinjs.currenturl = coinjs.MAINNET_URL;
+
 	/* start of address functions */
 
 	coinjs.amountStr2satoshi = function(amountStr) {
@@ -123,7 +131,10 @@
 	/* provide a public key and return address */
 	coinjs.pubkey2address = function(h){
 		var r = ripemd160(Crypto.SHA256(Crypto.util.hexToBytes(h), {asBytes: true}));
-		r.unshift(coinjs.pub);
+		if (coinjs.network == coinjs.BCH_TESTNET)
+			r.unshift(coinjs.testnetPub)
+		else
+			r.unshift(coinjs.pub);
 		var hash = Crypto.SHA256(Crypto.SHA256(r, {asBytes: true}), {asBytes: true});
 		var checksum = hash.slice(0, 4);
 		return coinjs.base58encode(r.concat(checksum));
@@ -299,7 +310,8 @@
 
 	/* retreive the balance from a given address */
 	coinjs.addressBalance = function(address, callback){
-		coinjs.ajax(coinjs.host+'?uid='+coinjs.uid+'&key='+coinjs.key+'&setmodule=addresses&request=bal&address='+address+'&r='+Math.random(), callback, "GET");
+		//coinjs.ajax(coinjs.host+'?uid='+coinjs.uid+'&key='+coinjs.key+'&setmodule=addresses&request=bal&address='+address+'&r='+Math.random(), callback, "GET");
+		coinjs.ajax(coinjs.currenturl + '/insight-api/addr/' + address + '/balance', callback, 'GET');
 	}
 
 	/* decompress an compressed public key */
@@ -967,6 +979,10 @@
 			coinjs.ajax(coinjs.host+'?uid='+coinjs.uid+'&key='+coinjs.key+'&setmodule=addresses&request=unspent&address='+address+'&r='+Math.random(), callback, "GET");
 		}
 
+		r.listUnspent2 = function(address, callback) {
+			coinjs.ajax(coinjs.currenturl+"/insight-api/addr/"+address+"/utxo", callback, 'GET');
+		}
+
 		/* add unspent to transaction */
 		r.addUnspent = function(address, callback){
 			var self = this;
@@ -1007,6 +1023,46 @@
 			});
 		}
 
+		r.addUnspent2 = function(address, totalSpent, callback){
+			var self = this;
+			this.listUnspent2(address, function(data){
+				var utxos = {};
+				if(data){
+					utxos = JSON.parse(data).sort(function(a, b) {
+						if (a.satoshis < b.satoshis)
+							return -1;
+						else if (a.satoshis > b.satoshis)
+							return 1;
+						else
+							return 0;
+					});
+				} else {
+					return False;
+				}
+
+				var prevtxouts = coinjs.Txouts();
+				// add utxo with increasing order
+				var inputAmount = 0;
+				for (var i = 0; i < utxos.length; ++i) {
+					var input = utxos[i];
+					inputAmount += input.satoshis;
+					self.addinput(input.txid, input.vout, input.scriptPubKey);
+					prevtxouts.addtxout(input.scriptPubKey, input.satoshis);
+					if (inputAmount >= totalSpent)
+						break;
+				}
+
+				if (inputAmount < totalSpent)
+					return False;
+
+				var x = {};
+				x.value = inputAmount;
+				x.prevtxouts = prevtxouts;
+
+				return callback(x);
+			});
+		}
+
 		/* add unspent and sign */
 		r.addUnspentAndSign = function(wif, callback){
 			var self = this;
@@ -1021,6 +1077,12 @@
 		r.broadcast = function(callback, txhex){
 			var tx = txhex || this.serialize();
 			coinjs.ajax(coinjs.host+'?uid='+coinjs.uid+'&key='+coinjs.key+'&setmodule=bitcoin&request=sendrawtransaction&rawtx='+tx+'&r='+Math.random(), callback, "GET");
+		}
+
+		r.broadcast2 = function(callback, txhex){
+			var tx = txhex || this.serialize();
+			var form = 'rawtx=' + tx;
+			coinjs.ajax(coinjs.currenturl+"/insight-api/tx/send", callback, 'POST', form);
 		}
 
 		r.sha256Sha256 = function(buffer) {
