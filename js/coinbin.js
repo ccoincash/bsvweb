@@ -128,12 +128,12 @@ $(document).ready(function() {
 
 				var tx2 = coinjs.transaction();
 				var txunspent = tx2.deserialize(tx.serialize());
-				var signed = txunspent.sign($("#walletKeys .privkey").val(), coinjs.pub, data.prevtxouts.data);
+				var signed = txunspent.sign($("#walletKeys .privkey").val(), coinjs.SigHashType.SIGHASH_ALL, data.prevtxouts.data);
 
 				tx2.broadcast2(function(data){
 					if(data){
 						data = JSON.parse(data);
-						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-success').html("txid: "+data.txid);
+						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-success').html('<a href="'+urlbase+'/insight/tx/'+data.txid+'" target="_blank">txid: '+data.txid+'</a>');
 					} else {
 						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-danger').html('error: ' + unescape(data).replace(/\+/g,' '));
 						$("#walletSendFailTransaction").removeClass('hidden');
@@ -1150,7 +1150,6 @@ $(document).ready(function() {
 				$("#rawTransactionStatus").html(unescape($(data).find("response").text()).replace(/\+/g,' ')).removeClass('hidden');
 				if(data.txid){
 					$("#rawTransactionStatus").addClass('alert-success').removeClass('alert-danger');
-					//$("#rawTransactionStatus").html('txid: '+data.txid);
 					$("#rawTransactionStatus").html('<a href="'+urlbase+'/insight/tx/'+data.txid+'" target="_blank">txid: '+data.txid+'</a>');
 				} else {
 					$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').prepend('<span class="glyphicon glyphicon-exclamation-sign"></span> ');
