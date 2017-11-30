@@ -610,8 +610,27 @@ $(document).ready(function() {
 	});
 
 	$(".txidClear").click(function(){
-		$("#inputs .row:first input").attr('disabled',false);
-		$("#inputs .row:first input").val("");
+		var inputRows = $("#inputs").children();
+		var n = inputRows.length;
+		if (n > 1) {
+			// move and remove last
+			for (var i = 0; i < n - 1; ++i) {
+				var row = inputRows[i];
+				var nextRow = inputRows[i + 1];
+				$(".txId", row).val($(".txId", nextRow).val());
+				$(".txIdN", row).val($(".txIdN", nextRow).val());
+				$(".txIdAmount", row).val($(".txIdAmount", nextRow).val());
+				$(".txIdSatoshis", row).val($(".txIdSatoshis", nextRow).val());
+				$(".txIdScript", row).val($(".txIdScript", nextRow).val());
+			}
+			// romve last row
+			var lastRow = inputRows[n - 1];
+			$(".txidRemove", lastRow).click()
+		}
+		else {
+			$("#inputs .row:first input").attr('disabled',false);
+			$("#inputs .row:first input").val("");
+		}
 		totalInputAmount();
 	});
 
