@@ -1773,6 +1773,7 @@ $(document).ready(function() {
 				coinjs.priv = coinjs.TESTNET_KEY.PRIV;
 				coinjs.multisig = coinjs.TESTNET_KEY.MULTISIG;
 				coinjs.hdkey = coinjs.TESTNET_KEY.HDKEY;
+				$('#networkType').html('<font size ="5">Testnet</font>');
 			}
 			else {
 				coinjs.currenturl = coinjs.MAINNET_URL;
@@ -1782,6 +1783,7 @@ $(document).ready(function() {
 				coinjs.priv = coinjs.MAINNET_KEY.PRIV;
 				coinjs.multisig = coinjs.MAINNET_KEY.MULTISIG;
 				coinjs.hdkey = coinjs.MAINNET_KEY.HDKEY;
+				$('#networkType').html('<font size ="5">Mainnet</font>');
 			}
 
 			$("#statusSettings").addClass("alert-success").removeClass("hidden").html("<span class=\"glyphicon glyphicon-ok\"></span> Settings updates successfully").fadeOut().fadeIn();	
