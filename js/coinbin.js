@@ -524,9 +524,6 @@ $(document).ready(function() {
 
 			if(!$(o).hasClass("has-error")){
 				var seq = null;
-				if($("#txRBF").is(":checked")){
-					seq = 0xffffffff-2;
-				}
 
 				var currentScript = $(".txIdScript",o).val();
 				if (currentScript.match(/^76a914[0-9a-f]{40}88ac$/)) {
@@ -562,9 +559,9 @@ $(document).ready(function() {
 				return;
 			}
 			allOutSatoshi += satoshi;
-			if(((a!="") && (ad.version == coinjs.pub || ad.version == coinjs.multisig || ad.version == coinjs.testnetPub)) && $(".amount",o).val()!=""){ // address
+			if(((a!="") && (ad.version == coinjs.pub || ad.version == coinjs.multisig)) && $(".amount",o).val()!=""){ // address
 				// P2SH output is 32, P2PKH is 34
-				estimatedTxSize += ((ad.version == coinjs.pub || ad.version == coinjs.testnetPub) ? 34 : 32)
+				estimatedTxSize += ((ad.version == coinjs.pub) ? 34 : 32)
 				tx.addoutput2(a, satoshi);
 			} else if (((a!="") && ad.version === 42) && $(".amount",o).val()!=""){ // stealth address
 				// 1 P2PKH and 1 OP_RETURN with 36 bytes, OP byte, and 8 byte value
@@ -779,7 +776,7 @@ $(document).ready(function() {
 	function redeemingFrom(string){
 		var r = {};
 		var decode = coinjs.addressDecode(string);
-		if(decode.version == coinjs.pub || decode.version == coinjs.testnetPub){ // regular address
+		if(decode.version == coinjs.pub){ // regular address
 			r.addr = string;
 			r.from = 'address';
 			r.isMultisig = false;
@@ -1153,7 +1150,8 @@ $(document).ready(function() {
 				$("#rawTransactionStatus").html(unescape($(data).find("response").text()).replace(/\+/g,' ')).removeClass('hidden');
 				if(data.txid){
 					$("#rawTransactionStatus").addClass('alert-success').removeClass('alert-danger');
-					$("#rawTransactionStatus").html('txid: '+data.txid);
+					//$("#rawTransactionStatus").html('txid: '+data.txid);
+					$("#rawTransactionStatus").html('<a href="'+urlbase+'/insight/tx/'+data.txid+'" target="_blank">txid: '+data.txid+'</a>');
 				} else {
 					$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').prepend('<span class="glyphicon glyphicon-exclamation-sign"></span> ');
 				}
@@ -1433,7 +1431,6 @@ $(document).ready(function() {
 			$("#verifyTransactionData .transactionVersion").html(decode['version']);
 			$("#verifyTransactionData .transactionSize").html(decode.size()+' <i>bytes</i>');
 			$("#verifyTransactionData .transactionLockTime").html(decode['lock_time']);
-			$("#verifyTransactionData .transactionRBF").hide();
 			$("#verifyTransactionData").removeClass("hidden");
 			$("#verifyTransactionData tbody").html("");
 
@@ -1459,11 +1456,6 @@ $(document).ready(function() {
 				}
 				h += '</td>';
 				h += '</tr>';
-
-				//debug
-				if(parseInt(o.sequence)<(0xFFFFFFFF-1)){
-					$("#verifyTransactionData .transactionRBF").show();
-				}
 			});
 
 			$(h).appendTo("#verifyTransactionData .ins tbody");
@@ -1489,15 +1481,9 @@ $(document).ready(function() {
 
 					var addr = '';
 					if(o.script.chunks.length==5){
-						var prefix = coinjs.pub;
-						if (coinjs.network == coinjs.BCH_TESTNET)
-							prefix = coinjs.testnetPub;
-						addr = coinjs.scripthash2address(Crypto.util.bytesToHex(o.script.chunks[2]), prefix);
+						addr = coinjs.scripthash2address(Crypto.util.bytesToHex(o.script.chunks[2]), coinjs.pub);
 					} else {
-						var prefix = coinjs.multisig;
-						if (coinjs.network == coinjs.BCH_TESTNET)
-							prefix = coinjs.testnetMultisig;
-						addr = coinjs.scripthash2address(Crypto.util.bytesToHex(o.script.chunks[1]), prefix);
+						addr = coinjs.scripthash2address(Crypto.util.bytesToHex(o.script.chunks[1]), coinjs.multisig);
 					}
 
 					h += '<tr>';
@@ -1767,13 +1753,6 @@ $(document).ready(function() {
 
 	/* settings page code */
 
-	$("#coinjs_pub").val('0x'+(coinjs.pub).toString(16));
-	$("#coinjs_priv").val('0x'+(coinjs.priv).toString(16));
-	$("#coinjs_multisig").val('0x'+(coinjs.multisig).toString(16));
-
-	$("#coinjs_hdpub").val('0x'+(coinjs.hdkey.pub).toString(16));
-	$("#coinjs_hdprv").val('0x'+(coinjs.hdkey.prv).toString(16));	
-
 	$("#settingsBtn").click(function(){
 
 		// log out of openwallet
@@ -1782,28 +1761,29 @@ $(document).ready(function() {
 		$("#statusSettings").removeClass("alert-success").removeClass("alert-danger").addClass("hidden").html("");
 		$("#settings .has-error").removeClass("has-error");
 
-		$.each($(".coinjssetting"),function(i, o){
-			if(!$(o).val().match(/^0x[0-9a-f]+$/)){
-				$(o).parent().addClass("has-error");
-			}
-		});
-
 		if($("#settings .has-error").length==0){
-
-			coinjs.pub =  $("#coinjs_pub").val()*1;
-			coinjs.priv =  $("#coinjs_priv").val()*1;
-			coinjs.multisig =  $("#coinjs_multisig").val()*1;
-
-			coinjs.hdkey.pub =  $("#coinjs_hdpub").val()*1;
-			coinjs.hdkey.prv =  $("#coinjs_hdprv").val()*1;
 
 			//configureBroadcast();
 			//configureGetUnspentTx();
 			coinjs.network = $("#coinjs_coin option:selected").val();
-			if (coinjs.network == coinjs.BCH_TESTNET)
+			if (coinjs.network == coinjs.BCH_TESTNET) {
 				coinjs.currenturl = coinjs.TESTNET_URL;
-			else
+
+				// change key type
+				coinjs.pub = coinjs.TESTNET_KEY.PUB;
+				coinjs.priv = coinjs.TESTNET_KEY.PRIV;
+				coinjs.multisig = coinjs.TESTNET_KEY.MULTISIG;
+				coinjs.hdkey = coinjs.TESTNET_KEY.HDKEY;
+			}
+			else {
 				coinjs.currenturl = coinjs.MAINNET_URL;
+
+				// change key type
+				coinjs.pub = coinjs.MAINNET_KEY.PUB;
+				coinjs.priv = coinjs.MAINNET_KEY.PRIV;
+				coinjs.multisig = coinjs.MAINNET_KEY.MULTISIG;
+				coinjs.hdkey = coinjs.MAINNET_KEY.HDKEY;
+			}
 
 			$("#statusSettings").addClass("alert-success").removeClass("hidden").html("<span class=\"glyphicon glyphicon-ok\"></span> Settings updates successfully").fadeOut().fadeIn();	
 		} else {
@@ -1832,13 +1812,6 @@ $(document).ready(function() {
 			$("#coinjs_utxo").val(o[6]);
 			$("#coinjs_utxo, #redeemFrom, #redeemFromBtn, #openBtn, .qrcodeScanner").attr('disabled',false);
 		}
-
-		// deal with the reset
-		$("#coinjs_pub").val(o[0]);
-		$("#coinjs_priv").val(o[1]);
-		$("#coinjs_multisig").val(o[2]);
-		$("#coinjs_hdpub").val(o[3]);
-		$("#coinjs_hdprv").val(o[4]);
 
 		// hide/show custom screen
 		if($("option:selected",this).val()=="custom"){

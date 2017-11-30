@@ -9,15 +9,32 @@
 
 	var coinjs = window.coinjs = function () { };
 
-	/* public vars */
-	coinjs.pub = 0x00;
-	coinjs.priv = 0x80;
-	coinjs.multisig = 0x05;
-	coinjs.hdkey = {'prv':0x0488ade4, 'pub':0x0488b21e};
+	coinjs.MAINNET_KEY = {
+		PUB: 0x00,
+		PRIV: 0x80,
+		MULTISIG: 0x05,
+		HDKEY: {
+			prv: 0x0488ade4,
+			pub: 0x0488b21e
+		}
+	}
 
-	//TODO: support more testnet type
-	coinjs.testnetPub = 0x6F; // 111(m or n)
-	coinjs.testnetMultisig = 0xC4 // 196(2)
+	coinjs.TESTNET_KEY = {
+		PUB: 0x6f,
+		PRIV: 0xef,
+		MULTISIG: 0xc4,
+		HDKEY: {
+			prv: 0x04358394,
+			pub: 0x043587cf,
+		}
+	}
+
+	// default network is mainnet
+	/* public vars */
+	coinjs.pub = coinjs.MAINNET_KEY.PUB;
+	coinjs.priv = coinjs.MAINNET_KEY.PRIV;
+	coinjs.multisig = coinjs.MAINNET_KEY.MULTISIG;
+	coinjs.hdkey = coinjs.MAINNET_KEY.HDKEY;
 
 	coinjs.compressed = false;
 
@@ -133,10 +150,7 @@
 	/* provide a public key and return address */
 	coinjs.pubkey2address = function(h){
 		var r = ripemd160(Crypto.SHA256(Crypto.util.hexToBytes(h), {asBytes: true}));
-		if (coinjs.network == coinjs.BCH_TESTNET)
-			r.unshift(coinjs.testnetPub)
-		else
-			r.unshift(coinjs.pub);
+		r.unshift(coinjs.pub);
 		var hash = Crypto.SHA256(Crypto.SHA256(r, {asBytes: true}), {asBytes: true});
 		var checksum = hash.slice(0, 4);
 		return coinjs.base58encode(r.concat(checksum));
@@ -266,9 +280,6 @@
 
 				} else if (o.version==coinjs.priv){ // wifkey
 					o.type = 'wifkey';
-
-				} else if (o.version==coinjs.testnetPub){
-					o.type = 'testnet_pub';
 
 				} else if (o.version==42) { // stealth address
 					o.type = 'stealth';
@@ -1423,8 +1434,8 @@
 		}
 
 		/* signs a time locked / hodl input */
-		r.signhodl = function(index, wif, sigHashType){
-			var signature = this.transactionSig(index, wif, sigHashType);
+		r.signhodl = function(index, wif, sigHashType, scriptcode, amount){
+			var signature = this.transactionSig(index, wif, sigHashType, scriptcode, amount);
 			var redeemScript = this.ins[index].script.buffer
 			var s = coinjs.script();
 			s.writeBytes(Crypto.util.hexToBytes(signature));
@@ -1434,7 +1445,7 @@
 		}
 		
 		/* sign a multisig input */
-		r.signmultisig = function(index, wif, sigHashType){
+		r.signmultisig = function(index, wif, sigHashType, scriptcode, amount){
 
 			function scriptListPubkey(redeemScript){
 				var r = {};
@@ -1504,7 +1515,7 @@
 				if(((d['type'] == 'scriptpubkey' && d['script']==Crypto.util.bytesToHex(pubkeyHash.buffer)) || d['type'] == 'empty') && d['signed'] == "false"){
 					this.signinput(i, wif, shType, prevtxout.script, prevtxout.amount);
 				} else if (d['type'] == 'hodl' && d['signed'] == "false") {
-					this.signhodl(i, wif, shType);
+					this.signhodl(i, wif, shType, prevtxout.script, prevtxout.amount);
 				} else if (d['type'] == 'multisig') {
 					this.signmultisig(i, wif, shType);
 				} else {
