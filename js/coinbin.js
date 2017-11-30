@@ -1489,12 +1489,15 @@ $(document).ready(function() {
 
 					var addr = '';
 					if(o.script.chunks.length==5){
-						addr = coinjs.scripthash2address(Crypto.util.bytesToHex(o.script.chunks[2]));
+						var prefix = coinjs.pub;
+						if (coinjs.network == coinjs.BCH_TESTNET)
+							prefix = coinjs.testnetPub;
+						addr = coinjs.scripthash2address(Crypto.util.bytesToHex(o.script.chunks[2]), prefix);
 					} else {
-						var pub = coinjs.pub;
-						coinjs.pub = coinjs.multisig;
-						addr = coinjs.scripthash2address(Crypto.util.bytesToHex(o.script.chunks[1]));
-						coinjs.pub = pub;
+						var prefix = coinjs.multisig;
+						if (coinjs.network == coinjs.BCH_TESTNET)
+							prefix = coinjs.testnetMultisig;
+						addr = coinjs.scripthash2address(Crypto.util.bytesToHex(o.script.chunks[1]), prefix);
 					}
 
 					h += '<tr>';

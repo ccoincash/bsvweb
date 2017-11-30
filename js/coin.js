@@ -14,8 +14,10 @@
 	coinjs.priv = 0x80;
 	coinjs.multisig = 0x05;
 	coinjs.hdkey = {'prv':0x0488ade4, 'pub':0x0488b21e};
-	coinjs.testnetPub = 0x6F; // 111
-	//TODO: support other type
+
+	//TODO: support more testnet type
+	coinjs.testnetPub = 0x6F; // 111(m or n)
+	coinjs.testnetMultisig = 0xC4 // 196(2)
 
 	coinjs.compressed = false;
 
@@ -141,9 +143,9 @@
 	}
 
 	/* provide a scripthash and return address */
-	coinjs.scripthash2address = function(h){
+	coinjs.scripthash2address = function(h, prefix){
 		var x = Crypto.util.hexToBytes(h);
-		x.unshift(coinjs.pub);
+		x.unshift(prefix);
 		var r = x;
 		r = Crypto.SHA256(Crypto.SHA256(r,{asBytes: true}),{asBytes: true});
 		var checksum = r.slice(0,4);
