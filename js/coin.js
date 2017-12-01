@@ -39,6 +39,7 @@
 	coinjs.compressed = false;
 
 	coinjs.COIN = 100000000;
+	coinjs.TRANSACTION_VERSION = 2;
 
 	/* other vars */
 	coinjs.developer = '17F6nrUSfaFAysetLHykFSSw3zySMTxCpU'; // bitcoin
@@ -897,7 +898,7 @@
 	coinjs.transaction = function() {
 
 		var r = {};
-		r.version = 1;
+		r.version = coinjs.TRANSACTION_VERSION;
 		r.lock_time = 0;
 		r.ins = [];
 		r.outs = [];
@@ -1517,7 +1518,7 @@
 				} else if (d['type'] == 'hodl' && d['signed'] == "false") {
 					this.signhodl(i, wif, shType, prevtxout.script, prevtxout.amount);
 				} else if (d['type'] == 'multisig') {
-					this.signmultisig(i, wif, shType);
+					this.signmultisig(i, wif, shType, prevtxout.script, prevtxout.amount);
 				} else {
 					// could not sign
 				}
