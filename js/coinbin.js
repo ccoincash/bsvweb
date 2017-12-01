@@ -27,6 +27,9 @@ $(document).ready(function() {
 
 					$("#walletAddress").html(keys.address);
 					$("#walletHistory").attr('href',coinjs.currenturl+'/insight/address/'+keys.address);
+					$("#walletBuy").attr('href','https://www.bitstamp.net/');
+					if (coinjs.network == coinjs.BCH_TESTNET)
+						$("#walletBuy").attr('href','https://testnet.manu.backend.hamburg/bitcoin-cash-faucet');
 
 					$("#walletQrCode").html("");
 					var qrcode = new QRCode("walletQrCode");
@@ -63,7 +66,7 @@ $(document).ready(function() {
 		$("#openWallet").addClass("hidden").show();
 
 		$("#walletAddress").html("");
-		$("#walletHistory").attr('href',coinjs.currenturl+'/insight/address/'+keys.address);
+		$("#walletHistory").attr('href',coinjs.currenturl+'/insight/');
 
 		$("#walletQrCode").html("");
 		var qrcode = new QRCode("walletQrCode");
