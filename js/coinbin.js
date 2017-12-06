@@ -1364,7 +1364,9 @@ $(document).ready(function() {
 
 	/* settings page code */
 
-	$("#settingsBtn").click(function(){
+	//$("#settingsBtn").click(function(){
+
+	function changeSetting() {
 
 		// log out of openwallet
 		$("#walletLogout").click();
@@ -1400,29 +1402,11 @@ $(document).ready(function() {
 		} else {
 			$("#statusSettings").addClass("alert-danger").removeClass("hidden").html("There is an error with one or more of your settings");	
 		}
-	});
+	}
 
 	$("#coinjs_coin").change(function(){
 
 		var o = ($("option:selected",this).attr("rel")).split(";");
-
-		// deal with broadcasting settings
-		if(o[5]=="false"){
-			$("#coinjs_broadcast, #rawTransaction, #rawSubmitBtn, #openBtn").attr('disabled',true);
-			$("#coinjs_broadcast").val("coinb.in");			
-		} else {
-			$("#coinjs_broadcast").val(o[5]);
-			$("#coinjs_broadcast, #rawTransaction, #rawSubmitBtn, #openBtn").attr('disabled',false);
-		}
-
-		// deal with unspent output settings
-		if(o[6]=="false"){
-			$("#coinjs_utxo, #redeemFrom, #redeemFromBtn, #openBtn, .qrcodeScanner").attr('disabled',true);			
-			$("#coinjs_utxo").val("coinb.in");
-		} else {
-			$("#coinjs_utxo").val(o[6]);
-			$("#coinjs_utxo, #redeemFrom, #redeemFromBtn, #openBtn, .qrcodeScanner").attr('disabled',false);
-		}
 
 		// hide/show custom screen
 		if($("option:selected",this).val()=="custom"){
@@ -1430,6 +1414,8 @@ $(document).ready(function() {
 		} else {
 			$("#settingsCustom").addClass("hidden");
 		}
+
+		changeSetting();
 	});
 
 	/* capture mouse movement to add entropy */
