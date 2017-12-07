@@ -135,7 +135,7 @@ $(document).ready(function() {
 				tx2.broadcast2(function(data){
 					if(data){
 						data = JSON.parse(data);
-						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-success').html('<a href="'+urlbase+'/insight/tx/'+data.txid+'" target="_blank">txid: '+data.txid+'</a>');
+						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-success').html('<a href="'+coinjs.currenturl+'/insight/tx/'+data.txid+'" target="_blank">txid: '+data.txid+'</a>');
 					} else {
 						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-danger').html('error: ' + unescape(data).replace(/\+/g,' '));
 						$("#walletSendFailTransaction").removeClass('hidden');
