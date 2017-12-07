@@ -22,3 +22,4 @@ It supports a number of key features such as:
 - Brain wallet support.
 - Offline qrcode creator and scanning tool
 - HD (bip32) support
+- Mainnet and Testnet support
