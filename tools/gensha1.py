@@ -17,12 +17,15 @@ def gen_dir(path):
     for item in os.listdir(path):
         itempath = os.path.join(path, item)
         sha1hex = gen_file(itempath)
-        sha1s[sha1hex] = os.path.join(prefix, item)
+        value = os.path.join(prefix, item)
+        key = sha1hex
+        sha1s[key] = value
 
     return sha1s
 
 def gen_all(filepath):
-    sha1s = collections.OrderedDict()
+    #sha1s = collections.OrderedDict()
+    sha1s = {}
     res = gen_dir('../js')
     sha1s.update(res)
 
@@ -38,6 +41,8 @@ def gen_all(filepath):
     sha1s[gen_file('../index.html')] = 'index.html'
     sha1s[gen_file('../README.md')] = 'README.md'
     sha1s[gen_file('../LICENSE')] = 'LICENSE'
+
+    sha1s = collections.OrderedDict(sorted(sha1s.iteritems(), key=lambda x: x[1]))
 
     f = open(filepath, 'w')
     json.dump(sha1s, f, indent=4)
