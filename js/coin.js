@@ -69,6 +69,8 @@
 			var decimal = num[1];
 			for (var i = 0; i < len; ++i)
 				decimal += '0';
+			if (num[0] == '')
+				num[0] = '0'
 			satoshi = parseInt(num[0]) * coinjs.COIN + parseInt(decimal);
 		}
 		else {
