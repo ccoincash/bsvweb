@@ -53,9 +53,46 @@
 	coinjs.BCH_MAINNET = 'bitcoincash_mainnet'
 	coinjs.network = coinjs.BCH_MAINNET;
 
-	coinjs.TESTNET_URL = 'https://tbcc.blockdozer.com';
-	coinjs.MAINNET_URL = 'https://bcc.blockdozer.com';
+	coinjs.TESTNET_URL = 'https://trest.bitcoin.com/v1';
+	coinjs.MAINNET_URL = 'https://rest.bitcoin.com/v1';
+
+	coinjs.bitcoincom = function() {
+		var r = {};
+		
+		r.details = function(address) {
+			return coinjs.currenturl + '/address/details/' + address;
+		}
+
+		r.utxo = function(address) {
+			return coinjs.currenturl + '/address/utxo/' + address;
+		}
+
+		r.sendtx = function(tx) {
+			return coinjs.currenturl + '/rawtransactions/sendRawTransaction/' + tx;
+		}
+
+		r.weburl = function() {
+			if (coinjs.currenturl == coinjs.MAINNET_URL) {
+				return "https://www.blocktrail.com/BCC";
+			}
+			else {
+				return "https://www.blocktrail.com/tBCC";
+			}
+		}
+
+		r.address = function(address) {
+			return r.weburl() + '/address/' + address;
+		}
+
+		r.txweb = function(tx) {
+			return r.weburl() + '/tx/' + tx
+		}
+
+		return r;
+	}();
+
 	coinjs.currenturl = coinjs.MAINNET_URL;
+	coinjs.bchapi = coinjs.bitcoincom
 
 	/* start of address functions */
 
@@ -326,8 +363,12 @@
 
 	/* retreive the balance from a given address */
 	coinjs.addressBalance = function(address, callback){
-		//coinjs.ajax(coinjs.host+'?uid='+coinjs.uid+'&key='+coinjs.key+'&setmodule=addresses&request=bal&address='+address+'&r='+Math.random(), callback, "GET");
-		coinjs.ajax(coinjs.currenturl + '/insight-api/addr/' + address + '/balance', callback, 'GET');
+		function balance(data) {
+			data = JSON.parse(data);
+			satoshi = data.balanceSat;
+			callback(satoshi);
+		}
+		coinjs.ajax(coinjs.bchapi.details(address), balance, 'GET');
 	}
 
 	/* decompress an compressed public key */
@@ -996,7 +1037,7 @@
 		}
 
 		r.listUnspent2 = function(address, callback) {
-			coinjs.ajax(coinjs.currenturl+"/insight-api/addr/"+address+"/utxo", callback, 'GET');
+			coinjs.ajax(coinjs.bchapi.utxo(address), callback, 'GET');
 		}
 
 		/* add unspent to transaction */
@@ -1098,7 +1139,7 @@
 		r.broadcast2 = function(callback, txhex){
 			var tx = txhex || this.serialize();
 			var form = 'rawtx=' + tx;
-			coinjs.ajax(coinjs.currenturl+"/insight-api/tx/send", callback, 'POST', form);
+			coinjs.ajax(coinjs.bchapi.sendtx(tx), callback, 'POST')
 		}
 
 		r.sha256Sha256 = function(buffer) {
@@ -1519,7 +1560,7 @@
 					this.signinput(i, wif, shType, prevtxout.script, prevtxout.amount);
 				} /*else if (d['type'] == 'hodl' && d['signed'] == "false") {
 					this.signhodl(i, wif, shType, prevtxout.script, prevtxout.amount);
-				}*/ 
+				}*/
 				else if (d['type'] == 'multisig') {
 					this.signmultisig(i, wif, shType, prevtxout.script, prevtxout.amount);
 				} else {

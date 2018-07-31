@@ -26,7 +26,7 @@ $(document).ready(function() {
 					var keys = coinjs.newKeys(s);
 
 					$("#walletAddress").html(keys.address);
-					$("#walletHistory").attr('href',coinjs.currenturl+'/insight/address/'+keys.address);
+					$("#walletHistory").attr('href',coinjs.bchapi.address(keys.address));
 					$("#walletBuy").attr('href','https://www.bitstamp.net/');
 					if (coinjs.network == coinjs.BCH_TESTNET)
 						$("#walletBuy").attr('href','https://testnet.manu.backend.hamburg/bitcoin-cash-faucet');
@@ -66,7 +66,7 @@ $(document).ready(function() {
 		$("#openWallet").addClass("hidden").show();
 
 		$("#walletAddress").html("");
-		$("#walletHistory").attr('href',coinjs.currenturl+'/insight/');
+		$("#walletHistory").attr('href',coinjs.currenturl);
 
 		$("#walletQrCode").html("");
 		var qrcode = new QRCode("walletQrCode");
@@ -135,7 +135,7 @@ $(document).ready(function() {
 				tx2.broadcast2(function(data){
 					if(data){
 						data = JSON.parse(data);
-						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-success').html('<a href="'+coinjs.currenturl+'/insight/tx/'+data.txid+'" target="_blank">txid: '+data.txid+'</a>');
+						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-success').html('<a href="'+coinjs.bchapi.txweb(data.txid)+'" target="_blank">txid: '+data.txid+'</a>');
 					} else {
 						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-danger').html('error: ' + unescape(data).replace(/\+/g,' '));
 						$("#walletSendFailTransaction").removeClass('hidden');
@@ -750,7 +750,7 @@ $(document).ready(function() {
 
 		$("#redeemFromBtn").html("Please wait, loading...").attr('disabled',true);
 
-		listUnspentBch(coinjs.currenturl, redeem);
+		listUnspentBch(redeem);
 
 		if($("#redeemFromStatus").hasClass("hidden")) {
 			// An ethical dilemma: Should we automatically set nLockTime?
@@ -861,17 +861,17 @@ $(document).ready(function() {
 		$("#inputs .txIdScript:last").val(script);
 	}
 
-	function listUnspentBch(urlbase, redeem) {
+	function listUnspentBch(redeem) {
 		$.ajax ({
 			type: "GET",
-			url: urlbase+"/insight-api/addr/"+redeem.addr+"/utxo",
+			url: coinjs.bchapi.utxo(redeem.addr),
 			dataType: "json",
 			error: function(data) {
 				$("#redeemFromStatus").removeClass('hidden').html('<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs!');
 			},
 			success: function(data) {
 				if(data){
-					$("#redeemFromAddress").removeClass('hidden').html('<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="'+urlbase+'/insight/address/'+redeem.addr+'" target="_blank">'+redeem.addr+'</a>');
+					$("#redeemFromAddress").removeClass('hidden').html('<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="'+coinjs.bchapi.address(redeem.addr)+'" target="_blank">'+redeem.addr+'</a>');
 					console.log('data: ', data)
 					for(var i = 0; i < data.length; ++i){
 						var o = data[i];
@@ -949,29 +949,31 @@ $(document).ready(function() {
 	/* broadcast a transaction */
 
 	$("#rawSubmitBtn").click(function(){
-		rawSubmitBch(this, coinjs.currenturl);
+		rawSubmitBch(this);
 	});
 
 	// broadcast transaction to bitcoin cash testnet
-	function rawSubmitBch(btn, urlbase){
+	function rawSubmitBch(btn){
 		var thisbtn = btn;		
 		$(thisbtn).val('Please wait, loading...').attr('disabled',true);
 		$.ajax ({
 			type: "POST",
-			url: urlbase+"/insight-api/tx/send",
-			data: {'rawtx':$("#rawTransaction").val()},
+			url: coinjs.bchapi.sendtx($("#rawTransaction").val()),
+			//data: {'rawtx':$("#rawTransaction").val()},
 			//dataType: "xml",
 			error: function(data) {
 				$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html(" There was an error submitting your request, please try again").prepend('<span class="glyphicon glyphicon-exclamation-sign"></span>');
 			},
             success: function(data) {
 				$("#rawTransactionStatus").html(unescape($(data).find("response").text()).replace(/\+/g,' ')).removeClass('hidden');
+				/* data not has id
 				if(data.txid){
 					$("#rawTransactionStatus").addClass('alert-success').removeClass('alert-danger');
-					$("#rawTransactionStatus").html('<a href="'+urlbase+'/insight/tx/'+data.txid+'" target="_blank">txid: '+data.txid+'</a>');
-				} else {
+					$("#rawTransactionStatus").html('<a href="'+coinjs.bchapi.txweb(data.txid)+'" target="_blank">txid: '+data.txid+'</a>');
+				} else {*/
 					$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').prepend('<span class="glyphicon glyphicon-exclamation-sign"></span> ');
-				}
+					$("#rawTransactionStatus").html('<a href="'+coinjs.bchapi.txweb(data)+'" target="_blank">'+data+'</a>');
+				//}
 			},
 			complete: function(data, status) {
 				$("#rawTransactionStatus").fadeOut().fadeIn();
