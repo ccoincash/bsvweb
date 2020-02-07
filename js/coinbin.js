@@ -26,10 +26,10 @@ $(document).ready(function() {
 					var keys = coinjs.newKeys(s);
 
 					$("#walletAddress").html(keys.address);
-					$("#walletHistory").attr('href',coinjs.bchapi.address(keys.address));
-					$("#walletBuy").attr('href','https://www.bitstamp.net/');
-					if (coinjs.network == coinjs.BCH_TESTNET)
-						$("#walletBuy").attr('href','https://testnet.manu.backend.hamburg/bitcoin-cash-faucet');
+					$("#walletHistory").attr('href',coinjs.bsvapi.address(keys.address));
+					$("#walletBuy").attr('href','https://otc.relayx.io/');
+					if (coinjs.network == coinjs.BSV_TESTNET)
+						$("#walletBuy").attr('href','https://faucet.bitcoincloud.net/');
 
 					$("#walletQrCode").html("");
 					var qrcode = new QRCode("walletQrCode");
@@ -118,7 +118,7 @@ $(document).ready(function() {
 			var inputSatoshi = data.value;
 
 			if (!inputSatoshi) {
-				$("#walletSendConfirmStatus").removeClass("hidden").addClass('alert-danger').html("You have a confirmed balance of "+dvalue+" BCH unable to send "+total+" BCH").fadeOut().fadeIn();
+				$("#walletSendConfirmStatus").removeClass("hidden").addClass('alert-danger').html("You have a confirmed balance of "+dvalue+" BSV unable to send "+total+" BSV").fadeOut().fadeIn();
 				thisbtn.attr('disabled',false);
 				return;
 			}
@@ -135,7 +135,7 @@ $(document).ready(function() {
 				tx2.broadcast2(function(data){
 					if(data){
 						data = JSON.parse(data);
-						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-success').html('<a href="'+coinjs.bchapi.txweb(data.txid)+'" target="_blank">txid: '+data.txid+'</a>');
+						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-success').html('<a href="'+coinjs.bsvapi.txweb(data.txid)+'" target="_blank">txid: '+data.txid+'</a>');
 					} else {
 						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-danger').html('error: ' + unescape(data).replace(/\+/g,' '));
 						$("#walletSendFailTransaction").removeClass('hidden');
@@ -236,9 +236,9 @@ $(document).ready(function() {
 		coinjs.addressBalance($("#walletAddress").html(),function(data){
 			if(data){
 				var v = data/100000000;
-				$("#walletBalance").html(v+" BCH").attr('rel',v).fadeOut().fadeIn();
+				$("#walletBalance").html(v+" BSV").attr('rel',v).fadeOut().fadeIn();
 			} else {
-				$("#walletBalance").html("0.00 BCH").attr('rel',v).fadeOut().fadeIn();
+				$("#walletBalance").html("0.00 BSV").attr('rel',v).fadeOut().fadeIn();
 			}
 
 			$("#walletLoader").addClass("hidden");
@@ -750,7 +750,7 @@ $(document).ready(function() {
 
 		$("#redeemFromBtn").html("Please wait, loading...").attr('disabled',true);
 
-		listUnspentBch(redeem);
+		listUnspentBsv(redeem);
 
 		if($("#redeemFromStatus").hasClass("hidden")) {
 			// An ethical dilemma: Should we automatically set nLockTime?
@@ -861,25 +861,25 @@ $(document).ready(function() {
 		$("#inputs .txIdScript:last").val(script);
 	}
 
-	function listUnspentBch(redeem) {
+	function listUnspentBsv(redeem) {
 		$.ajax ({
 			type: "GET",
-			url: coinjs.bchapi.utxo(redeem.addr),
+			url: coinjs.bsvapi.utxo(redeem.addr),
 			dataType: "json",
 			error: function(data) {
 				$("#redeemFromStatus").removeClass('hidden').html('<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs!');
 			},
 			success: function(data) {
 				if(data){
-					$("#redeemFromAddress").removeClass('hidden').html('<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="'+coinjs.bchapi.address(redeem.addr)+'" target="_blank">'+redeem.addr+'</a>');
+					$("#redeemFromAddress").removeClass('hidden').html('<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="'+coinjs.bsvapi.address(redeem.addr)+'" target="_blank">'+redeem.addr+'</a>');
 					console.log('data: ', data)
 					for(var i = 0; i < data.length; ++i){
 						var o = data[i];
-						var tx = o.txid;
-						var n = o.vout;
+						var tx = o.tx_hash;
+						var n = o.tx_pos;
+						// TODO:
 						var script = (redeem.isMultisig==true) ? $("#redeemFrom").val() : o.scriptPubKey;
-						var amount = o.amount;
-						var satoshis = o.satoshis
+						var satoshis = o.value
 						addOutput2(tx, n, script, satoshis);
 					}
 				} else {
@@ -949,16 +949,16 @@ $(document).ready(function() {
 	/* broadcast a transaction */
 
 	$("#rawSubmitBtn").click(function(){
-		rawSubmitBch(this);
+		rawSubmitBsv(this);
 	});
 
-	// broadcast transaction to bitcoin cash testnet
-	function rawSubmitBch(btn){
+	// broadcast transaction to bitcon sv testnet
+	function rawSubmitBsv(btn){
 		var thisbtn = btn;		
 		$(thisbtn).val('Please wait, loading...').attr('disabled',true);
 		$.ajax ({
 			type: "POST",
-			url: coinjs.bchapi.sendtx($("#rawTransaction").val()),
+			url: coinjs.bsvapi.sendtx($("#rawTransaction").val()),
 			//data: {'rawtx':$("#rawTransaction").val()},
 			//dataType: "xml",
 			error: function(data) {
@@ -969,10 +969,10 @@ $(document).ready(function() {
 				/* data not has id
 				if(data.txid){
 					$("#rawTransactionStatus").addClass('alert-success').removeClass('alert-danger');
-					$("#rawTransactionStatus").html('<a href="'+coinjs.bchapi.txweb(data.txid)+'" target="_blank">txid: '+data.txid+'</a>');
+					$("#rawTransactionStatus").html('<a href="'+coinjs.bsvapi.txweb(data.txid)+'" target="_blank">txid: '+data.txid+'</a>');
 				} else {*/
 					$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').prepend('<span class="glyphicon glyphicon-exclamation-sign"></span> ');
-					$("#rawTransactionStatus").html('<a href="'+coinjs.bchapi.txweb(data)+'" target="_blank">'+data+'</a>');
+					$("#rawTransactionStatus").html('<a href="'+coinjs.bsvapi.txweb(data)+'" target="_blank">'+data+'</a>');
 				//}
 			},
 			complete: function(data, status) {
@@ -1378,7 +1378,7 @@ $(document).ready(function() {
 		if($("#settings .has-error").length==0){
 
 			coinjs.network = $("#coinjs_coin option:selected").val();
-			if (coinjs.network == coinjs.BCH_TESTNET) {
+			if (coinjs.network == coinjs.BSV_TESTNET) {
 				coinjs.currenturl = coinjs.TESTNET_URL;
 
 				// change key type

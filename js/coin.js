@@ -42,41 +42,43 @@
 	coinjs.TRANSACTION_VERSION = 2;
 
 	/* other vars */
-	coinjs.developer = '17F6nrUSfaFAysetLHykFSSw3zySMTxCpU'; // bitcoin
+	coinjs.developer = '13s6d4gARgSZdu2PYhcvq66vNysZsYPpZV'; // bitcoin
 
 	/* bit(coinb.in) api vars */
 	coinjs.host = ('https:'==document.location.protocol?'https://':'http://')+'coinb.in/api/';
 	coinjs.uid = '1';
 	coinjs.key = '12345678901234567890123456789012';
 
-	coinjs.BCH_TESTNET = 'bitcoincash_testnet';
-	coinjs.BCH_MAINNET = 'bitcoincash_mainnet'
-	coinjs.network = coinjs.BCH_MAINNET;
+	coinjs.BSV_TESTNET = 'bitcoinsv_testnet';
+	coinjs.BSV_MAINNET = 'bitcoinsv_mainnet'
+	coinjs.network = coinjs.BSV_MAINNET;
 
-	coinjs.TESTNET_URL = 'https://trest.bitcoin.com/v1';
-	coinjs.MAINNET_URL = 'https://rest.bitcoin.com/v1';
+    // main, test or stn
+	coinjs.TESTNET_URL = 'https://api.whatsonchain.com/v1/bsv/test';
+	coinjs.MAINNET_URL = 'https://api.whatsonchain.com/v1/bsv/main';
 
-	coinjs.bitcoincom = function() {
+	coinjs.whatsonchain = function() {
 		var r = {};
 		
-		r.details = function(address) {
-			return coinjs.currenturl + '/address/details/' + address;
+		r.balance = function(address) {
+			return coinjs.currenturl + '/address/' + address + '/balance';
 		}
 
 		r.utxo = function(address) {
-			return coinjs.currenturl + '/address/utxo/' + address;
+			return coinjs.currenturl + '/address/' + address + '/unspent';
 		}
 
 		r.sendtx = function(tx) {
-			return coinjs.currenturl + '/rawtransactions/sendRawTransaction/' + tx;
+			//TODO:
+			return coinjs.currenturl + 'tx/send' + tx;
 		}
 
 		r.weburl = function() {
 			if (coinjs.currenturl == coinjs.MAINNET_URL) {
-				return "https://www.blocktrail.com/BCC";
+				return "https://whatsonchain.com";
 			}
 			else {
-				return "https://www.blocktrail.com/tBCC";
+				return "https://test.whatsonchain.com";
 			}
 		}
 
@@ -92,7 +94,7 @@
 	}();
 
 	coinjs.currenturl = coinjs.MAINNET_URL;
-	coinjs.bchapi = coinjs.bitcoincom
+	coinjs.bsvapi = coinjs.whatsonchain
 
 	/* start of address functions */
 
@@ -365,10 +367,10 @@
 	coinjs.addressBalance = function(address, callback){
 		function balance(data) {
 			data = JSON.parse(data);
-			satoshi = data.balanceSat;
+			satoshi = data.confirmed + data.unconfirmed;
 			callback(satoshi);
 		}
-		coinjs.ajax(coinjs.bchapi.details(address), balance, 'GET');
+		coinjs.ajax(coinjs.bsvapi.balance(address), balance, 'GET');
 	}
 
 	/* decompress an compressed public key */
@@ -930,6 +932,7 @@
 		}
 
 		r.addtxout = function(script, satoshiStr) {
+			// TODO: script
 			var satoshi = parseInt(satoshiStr);
 			this.data.push({script: Crypto.util.hexToBytes(script), amount: satoshi});
 		}
@@ -1037,7 +1040,7 @@
 		}
 
 		r.listUnspent2 = function(address, callback) {
-			coinjs.ajax(coinjs.bchapi.utxo(address), callback, 'GET');
+			coinjs.ajax(coinjs.bsvapi.utxo(address), callback, 'GET');
 		}
 
 		/* add unspent to transaction */
@@ -1139,7 +1142,7 @@
 		r.broadcast2 = function(callback, txhex){
 			var tx = txhex || this.serialize();
 			var form = 'rawtx=' + tx;
-			coinjs.ajax(coinjs.bchapi.sendtx(tx), callback, 'POST')
+			coinjs.ajax(coinjs.bsvapi.sendtx(tx), callback, 'POST')
 		}
 
 		r.sha256Sha256 = function(buffer) {
@@ -1179,7 +1182,7 @@
 			return this.sha256Sha256(buffer);
 		}
 
-		// transactionHash used in bitcoin cash
+		// transactionHash used in bitcon sv
 		r.transactionHash2 = function(index, sigHashType, scriptcode, amount) {
 			var nHashType = sigHashType
 			var hashPrevouts = coinjs.uint256();
