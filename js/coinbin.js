@@ -134,8 +134,9 @@ $(document).ready(function() {
 
 				tx2.broadcast2(function(data){
 					if(data){
-						data = JSON.parse(data);
-						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-success').html('<a href="'+coinjs.bsvapi.txweb(data.txid)+'" target="_blank">txid: '+data.txid+'</a>');
+						var txid = data.replace(/\"/g, '');
+						console.log('broadcast2: data:', data, data[0], txid);
+						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-success').html('<a href="'+coinjs.bsvapi.txweb(txid)+'" target="_blank">txid: '+txid+'</a>');
 					} else {
 						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-danger').html('error: ' + unescape(data).replace(/\+/g,' '));
 						$("#walletSendFailTransaction").removeClass('hidden');
@@ -231,7 +232,6 @@ $(document).ready(function() {
 	});
 
 	function walletBalance(){
-		var tx = coinjs.transaction();
 		$("#walletLoader").removeClass("hidden");
 		coinjs.addressBalance($("#walletAddress").html(),function(data){
 			if(data){
@@ -873,15 +873,32 @@ $(document).ready(function() {
 				if(data){
 					$("#redeemFromAddress").removeClass('hidden').html('<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="'+coinjs.bsvapi.address(redeem.addr)+'" target="_blank">'+redeem.addr+'</a>');
 					console.log('data: ', data)
+					var txhashs = [];
+					var txouts = [];
 					for(var i = 0; i < data.length; ++i){
 						var o = data[i];
-						var tx = o.tx_hash;
-						var n = o.tx_pos;
-						// TODO:
-						var script = (redeem.isMultisig==true) ? $("#redeemFrom").val() : o.scriptPubKey;
-						var satoshis = o.value
-						addOutput2(tx, n, script, satoshis);
+						txhashs.push(o.tx_hash);
+						txouts.push([o.tx_hash, o.tx_pos, o.value])
 					}
+					function bulktxs(data) {
+						console.log('bulktxs: ', data)
+						data = JSON.parse(data);
+						for (var i = 0; i < data.length; ++i) {
+							var tx = data[i];
+							console.assert(txouts[i][0] == tx.txid, 'wrong txout');
+							var pos = txouts[i][1];
+							var txout = tx.vout[pos];
+							addOutput2(tx.txid, pos, txout.scriptPubKey.hex, txouts[i][2]);
+						}
+						totalInputAmount();
+					}
+
+					forms = {
+						'txids': txhashs
+					}
+
+					console.log('addUnspend2: txids ', txhashs, txouts)
+					coinjs.ajax(coinjs.bsvapi.bulktxs(), bulktxs, 'POST', JSON.stringify(forms))
 				} else {
 					$("#redeemFromStatus").removeClass('hidden').html('<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs.');
 				}
@@ -906,6 +923,7 @@ $(document).ready(function() {
 				if(!isNaN($(o).val())){
 					f += $(o).val()*1;
 				}
+				console.log('totalInputAmount:', f)
 				$("#totalInput").html((($("#totalInput").html()*1) + (f*1)).toFixed(8));
 			}
 		});
@@ -959,8 +977,8 @@ $(document).ready(function() {
 		$.ajax ({
 			type: "POST",
 			url: coinjs.bsvapi.sendtx($("#rawTransaction").val()),
-			//data: {'rawtx':$("#rawTransaction").val()},
-			//dataType: "xml",
+			data: JSON.stringify({'txhex':$("#rawTransaction").val()}),
+			dataType: "json",
 			error: function(data) {
 				$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html(" There was an error submitting your request, please try again").prepend('<span class="glyphicon glyphicon-exclamation-sign"></span>');
 			},

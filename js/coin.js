@@ -69,8 +69,15 @@
 		}
 
 		r.sendtx = function(tx) {
-			//TODO:
-			return coinjs.currenturl + 'tx/send' + tx;
+			return coinjs.currenturl + '/tx/raw';
+		}
+
+		r.txinfo = function(tx) {
+			return coinjs.currenturl + '/tx/hash/' + tx;
+		}
+
+		r.bulktxs = function() {
+			return coinjs.currenturl + '/txs';
 		}
 
 		r.weburl = function() {
@@ -932,7 +939,6 @@
 		}
 
 		r.addtxout = function(script, satoshiStr) {
-			// TODO: script
 			var satoshi = parseInt(satoshiStr);
 			this.data.push({script: Crypto.util.hexToBytes(script), amount: satoshi});
 		}
@@ -1100,14 +1106,15 @@
 					return False;
 				}
 
-				var prevtxouts = coinjs.Txouts();
 				// add utxo with increasing order
 				var inputAmount = 0;
+				var txhashs = [];
+				var txouts = [];
 				for (var i = 0; i < utxos.length; ++i) {
 					var input = utxos[i];
-					inputAmount += input.satoshis;
-					self.addinput(input.txid, input.vout, input.scriptPubKey);
-					prevtxouts.addtxout(input.scriptPubKey, input.satoshis);
+					inputAmount += input.value;
+					txhashs.push(input.tx_hash);
+					txouts.push([input.tx_hash, input.tx_pos, input.value]);
 					if (inputAmount >= totalSpent)
 						break;
 				}
@@ -1115,11 +1122,32 @@
 				if (inputAmount < totalSpent)
 					return False;
 
-				var x = {};
-				x.value = inputAmount;
-				x.prevtxouts = prevtxouts;
+				function bulktxs(data) {
+					console.log('bulktxs: ', data)
+					data = JSON.parse(data);
+					var prevtxouts = coinjs.Txouts();
+					for (var i = 0; i < data.length; ++i) {
+						var tx = data[i];
+						console.assert(txouts[i][0] == tx.txid, 'wrong txout 2');
+						var pos = txouts[i][1];
+						var txout = tx.vout[pos];
+						self.addinput(tx.txid, pos, txout.scriptPubKey.hex);
+						prevtxouts.addtxout(txout.scriptPubKey.hex,  txouts[i][2]);
+					}
+					var x = {};
+					x.value = inputAmount;
+					x.prevtxouts = prevtxouts;
 
-				return callback(x);
+					return callback(x);
+				}
+
+				forms = {
+					'txids': txhashs
+				}
+
+				console.log('addUnspend2: txids ', txhashs, txouts)
+				coinjs.ajax(coinjs.bsvapi.bulktxs(), bulktxs, 'POST', JSON.stringify(forms))
+
 			});
 		}
 
@@ -1141,8 +1169,8 @@
 
 		r.broadcast2 = function(callback, txhex){
 			var tx = txhex || this.serialize();
-			var form = 'rawtx=' + tx;
-			coinjs.ajax(coinjs.bsvapi.sendtx(tx), callback, 'POST')
+			var form = {'txhex': tx};
+			coinjs.ajax(coinjs.bsvapi.sendtx(tx), callback, 'POST', JSON.stringify(form))
 		}
 
 		r.sha256Sha256 = function(buffer) {
@@ -1819,7 +1847,7 @@
 		};
 
 		if(m == 'POST'){
-			x.setRequestHeader('Content-type','application/x-www-form-urlencoded');
+			x.setRequestHeader('Content-type','application/json');
 		}
 
 		x.send(a);
