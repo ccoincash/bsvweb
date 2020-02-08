@@ -10,7 +10,6 @@ Github URL: https://github.com/ccoincash/bsvweb.git/
 It supports a number of key features such as: 
 
 - Offline Compressed & uncompressed Address creation.
-- Offline Multisignature Address creation.
 - "In browser" Key (re)generation. 
 - Send and receive payments.
 - Ability to decode transactions, redeem scripts and more offline.
@@ -18,7 +17,6 @@ It supports a number of key features such as:
 - Sign transactions offline.
 - Signatures are deterministic as per RFC 6979 (https://tools.ietf.org/html/rfc6979#section-3.2)
 - Broadcast transactions.
-- nLockTime support.
 - Brain wallet support.
 - Offline qrcode creator and scanning tool
 - HD (bip32) support
