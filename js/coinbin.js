@@ -28,7 +28,7 @@ $(document).ready(function() {
 					$("#walletAddress").html(keys.address);
 					$("#walletHistory").attr('href',coinjs.bsvapi.address(keys.address));
 					$("#walletBuy").attr('href','https://otc.relayx.io/');
-					if (coinjs.network == coinjs.BSV_TESTNET)
+					if (coinjs.network == coinjs.BSV_TESTNET || coinjs.network == coinjs.BSV_STN)
 						$("#walletBuy").attr('href','https://faucet.bitcoincloud.net/');
 
 					$("#walletQrCode").html("");
@@ -1405,6 +1405,16 @@ $(document).ready(function() {
 				coinjs.multisig = coinjs.TESTNET_KEY.MULTISIG;
 				coinjs.hdkey = coinjs.TESTNET_KEY.HDKEY;
 				$('#networkType').html('<font size ="5">Testnet</font>');
+			}
+			else if (coinjs.network == coinjs.BSV_STN) {
+				coinjs.currenturl = coinjs.STN_URL;
+
+				// change key type
+				coinjs.pub = coinjs.STN_KEY.PUB;
+				coinjs.priv = coinjs.STN_KEY.PRIV;
+				coinjs.multisig = coinjs.STN_KEY.MULTISIG;
+				coinjs.hdkey = coinjs.STN_KEY.HDKEY;
+				$('#networkType').html('<font size ="5">STN</font>');
 			}
 			else {
 				coinjs.currenturl = coinjs.MAINNET_URL;

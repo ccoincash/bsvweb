@@ -29,6 +29,16 @@
 		}
 	}
 
+	coinjs.STN_KEY = {
+		PUB: 0x6f,
+		PRIV: 0xef,
+		MULTISIG: 0xc4,
+		HDKEY: {
+			prv: 0x04358394,
+			pub: 0x043587cf,
+		}
+	}
+
 	// default network is mainnet
 	/* public vars */
 	coinjs.pub = coinjs.MAINNET_KEY.PUB;
@@ -50,11 +60,13 @@
 	coinjs.key = '12345678901234567890123456789012';
 
 	coinjs.BSV_TESTNET = 'bitcoinsv_testnet';
+	coinjs.BSV_STN = 'bitcoinsv_stn';
 	coinjs.BSV_MAINNET = 'bitcoinsv_mainnet'
 	coinjs.network = coinjs.BSV_MAINNET;
 
     // main, test or stn
 	coinjs.TESTNET_URL = 'https://api.whatsonchain.com/v1/bsv/test';
+	coinjs.STN_URL = 'https://api.whatsonchain.com/v1/bsv/stn';
 	coinjs.MAINNET_URL = 'https://api.whatsonchain.com/v1/bsv/main';
 
 	coinjs.whatsonchain = function() {
@@ -83,6 +95,9 @@
 		r.weburl = function() {
 			if (coinjs.currenturl == coinjs.MAINNET_URL) {
 				return "https://whatsonchain.com";
+			}
+			else if (coinjs.currenturl == coinjs.STN_URL) {
+				return "https://stn.whatsonchain.com";
 			}
 			else {
 				return "https://test.whatsonchain.com";
