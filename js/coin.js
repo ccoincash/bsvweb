@@ -1218,14 +1218,18 @@
 			for (var i = 0; i < this.outs.length; i++) {
 				var txout = this.outs[i];
 				buffer = buffer.concat(coinjs.numToBytes(txout.value, 8));
+				console.log("getOutputsHash:", Crypto.util.bytesToHex(buffer), txout.value)
 				var scriptBytes = txout.script.buffer;
 				buffer = buffer.concat(coinjs.numToVarInt(scriptBytes.length));
+				console.log("getOutputsHash:", Crypto.util.bytesToHex(buffer), Crypto.util.bytesToHex)
 				buffer = buffer.concat(scriptBytes);
+				console.log("getOutputsHash:", Crypto.util.bytesToHex(buffer))
 			}
-			return this.sha256Sha256(buffer);
+			var res = this.sha256Sha256(buffer);
+			console.log("getOutputsHash:", Crypto.util.bytesToHex(res))
 		}
 
-		// transactionHash used in bitcon sv
+		// transactionHash used in bitcoin sv
 		r.transactionHash2 = function(index, sigHashType, scriptcode, amount) {
 			var nHashType = sigHashType
 			var hashPrevouts = coinjs.uint256();

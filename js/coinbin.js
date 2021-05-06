@@ -970,7 +970,7 @@ $(document).ready(function() {
 		rawSubmitBsv(this);
 	});
 
-	// broadcast transaction to bitcon sv testnet
+	// broadcast transaction to bitcoin sv testnet
 	function rawSubmitBsv(btn){
 		var thisbtn = btn;		
 		$(thisbtn).val('Please wait, loading...').attr('disabled',true);
