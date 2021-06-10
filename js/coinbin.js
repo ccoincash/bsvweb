@@ -3,15 +3,16 @@ $(document).ready(function() {
 	/* open wallet code */
 
 	$("#openBtn").click(function(){
-		var email = $("#openEmail").val().toLowerCase();
-		if(email.match(/[\s\w\d]+@[\s\w\d]+/g)){
+		//var email = $("#openEmail").val().toLowerCase();
+		//if(email.match(/[\s\w\d]+@[\s\w\d]+/g)){
+		if (true) {
 			if($("#openPass").val().length>=10){
 				if($("#openPass").val()==$("#openPassConfirm").val()){
-					var email = $("#openEmail").val().toLowerCase();
+					var account = $("#openEmail").val().toLowerCase();
 					var pass = $("#openPass").val();
-					var s = email;
+					var s = account;
 					s += '|'+pass+'|';
-					s += s.length+'|!@'+((pass.length*7)+email.length)*7;
+					s += s.length+'|!@'+((pass.length*7)+account.length)*7;
 					var regchars = (pass.match(/[a-z]+/g)) ? pass.match(/[a-z]+/g).length : 1;
 					var regupchars = (pass.match(/[A-Z]+/g)) ? pass.match(/[A-Z]+/g).length : 1;
 					var regnums = (pass.match(/[0-9]+/g)) ? pass.match(/[0-9]+/g).length : 1;
@@ -90,12 +91,6 @@ $(document).ready(function() {
 		var thisbtn = $(this);
 		var tx = coinjs.transaction();
 		var txfee = $("#txFee");
-		//var devaddr = coinjs.developer;
-		//var devamount = $("#developerDonation");
-
-		//if((devamount.val()*1)>0){
-		//	tx.addoutput(devaddr, devamount.val()*1);
-		//}
 
 		var total = coinjs.amountStr2satoshi(txfee.val());
 
@@ -105,14 +100,14 @@ $(document).ready(function() {
 			var satoshi = coinjs.amountStr2satoshi(amount.val());
 			if(amount.val()*1>0){
 				total += satoshi;
-				tx.addoutput2(addr.val(), satoshi);
+				tx.addoutput(addr.val(), satoshi);
 			}
 		});
 
 		thisbtn.attr('disabled',true);
 
 		//utxo use strategy: sort by increasing value
-		tx.addUnspent2($("#walletAddress").html(), total, function(data){
+		tx.addUnspent($("#walletAddress").html(), total, function(data){
 
 			var dvalue = (data.value/100000000).toFixed(8) * 1;
 			var inputSatoshi = data.value;
@@ -125,17 +120,15 @@ $(document).ready(function() {
 			else {
 
 				if (inputSatoshi > total) {
-					tx.addoutput2($("#walletAddress").html(), inputSatoshi - total)
+					tx.addoutput($("#walletAddress").html(), inputSatoshi - total)
 				}
 
-				var tx2 = coinjs.transaction();
-				var txunspent = tx2.deserialize(tx.serialize());
-				var signed = txunspent.sign($("#walletKeys .privkey").val(), coinjs.SigHashType.SIGHASH_ALL, data.prevtxouts.data);
+				var signed = tx.sign($("#walletKeys .privkey").val(), coinjs.SigHashType.SIGHASH_ALL, data.prevtxouts.data);
 
-				tx2.broadcast2(function(data){
+				tx.broadcast(function(data){
 					if(data){
 						var txid = data.replace(/\"/g, '');
-						console.log('broadcast2: data:', data, data[0], txid);
+						console.log('broadcast: data:', data, data[0], txid);
 						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-success').html('<a href="'+coinjs.bsvapi.txweb(txid)+'" target="_blank">txid: '+txid+'</a>');
 					} else {
 						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-danger').html('error: ' + unescape(data).replace(/\+/g,' '));
@@ -564,7 +557,7 @@ $(document).ready(function() {
 			if(((a!="") && (ad.version == coinjs.pub || ad.version == coinjs.multisig)) && $(".amount",o).val()!=""){ // address
 				// P2SH output is 32, P2PKH is 34
 				estimatedTxSize += ((ad.version == coinjs.pub) ? 34 : 32)
-				tx.addoutput2(a, satoshi);
+				tx.addoutput(a, satoshi);
 			} else if (((a!="") && ad.version === 42) && $(".amount",o).val()!=""){ // stealth address
 				// 1 P2PKH and 1 OP_RETURN with 36 bytes, OP byte, and 8 byte value
 				estimatedTxSize += 78
@@ -1254,7 +1247,7 @@ $(document).ready(function() {
 				var txouts = coinjs.Txouts();
 				txouts.deserialize(prevTxouts.val())
 				// check if the txouts.length == tx.txins.length
-				if (txouts.data.length != t.ins.length) {
+				if (txouts.data.length != t.tx.inputs.length) {
 					$("#modalWarningTitle").html("previous transaction out error");
 					$("#modalWarningBody").html("The previous transaction out is not match with the transaction input");
 					$("#warningTemplate").modal("show");
